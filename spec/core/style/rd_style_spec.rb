@@ -35,21 +35,7 @@ honbun
 </div>
 				EOF
 			end
-			it { @diary.to_html({'anchor' => true}).should eq @html }
-		end
-
-		context 'CHTML' do
-			before do
-				@html = <<-'EOF'
-<%=section_enter_proc( Time::at( 1041346800 ))%>
-<H3><%= subtitle_proc( Time::at( 1041346800 ), "subTitle" ) %></H3>
-<p>honbun</p>
-<H4>subTitleH4</H4>
-<p>honbun</p>
-<%=section_leave_proc( Time::at( 1041346800 ))%>
-				EOF
-			end
-			it { @diary.to_html({'anchor' => true}, :CHTML).should eq @html }
+			it { @diary.to_html.should eq @html }
 		end
 	end
 
@@ -86,7 +72,65 @@ replace
 </div>
 			EOF
 		end
-		it { @diary.to_html({'anchor' => true, 'index' => ''}).should eq @html }
+		it { @diary.to_html.should eq @html }
+	end
+
+	describe '#add_section' do
+		before do
+			source = <<-'EOF'
+= subTitle
+honbun
+
+== subTitleH4
+honbun
+
+			EOF
+			@diary.append(source)
+			@diary.add_section('subTitle2', 'honbun')
+
+			@html = <<-'EOF'
+<div class="section">
+<%=section_enter_proc( Time::at( 1041346800 ))%>
+<h3><%= subtitle_proc( Time::at( 1041346800 ), "subTitle" ) %></h3>
+<p>honbun</p>
+<h4>subTitleH4</h4>
+<p>honbun</p>
+<%=section_leave_proc( Time::at( 1041346800 ))%>
+</div>
+<div class="section">
+<%=section_enter_proc( Time::at( 1041346800 ))%>
+<h3><%= subtitle_proc( Time::at( 1041346800 ), "subTitle2" ) %></h3>
+<p>honbun</p>
+<%=section_leave_proc( Time::at( 1041346800 ))%>
+</div>
+			EOF
+		end
+		it { @diary.to_html.should eq @html }
+	end
+
+	describe '#delete_section' do
+		before do
+			source = <<-'EOF'
+= subTitle
+honbun
+
+= subTitle2
+honbun
+
+			EOF
+			@diary.append(source)
+			@diary.delete_section(1)
+
+			@html = <<-'EOF'
+<div class="section">
+<%=section_enter_proc( Time::at( 1041346800 ))%>
+<h3><%= subtitle_proc( Time::at( 1041346800 ), "subTitle2" ) %></h3>
+<p>honbun</p>
+<%=section_leave_proc( Time::at( 1041346800 ))%>
+</div>
+			EOF
+		end
+		it { @diary.to_html.should eq @html }
 	end
 
 	describe 'test_rd_style_plugin' do
@@ -124,24 +168,7 @@ aaa</p>
 </div>
 				EOF
 			end
-			it { @diary.to_html({'anchor' => true}).should eq @html }
-		end
-
-		context 'CHTML' do
-			before do
-				@html = <<-'EOF'
-<%=section_enter_proc( Time::at( 1041346800 ))%>
-<H3><%= subtitle_proc( Time::at( 1041346800 ), "subTitle" ) %></H3>
-<p><%=plugin %>
-<%=plugin %>
-aaa</p>
-<p><%=plugin %></p>
-<p>a<%=ho ge%>b</p>
-<p><%=ho ge%></p>
-<%=section_leave_proc( Time::at( 1041346800 ))%>
-				EOF
-			end
-			it { @diary.to_html({'anchor' => true}, :CHTML).should eq @html }
+			it { @diary.to_html.should eq @html }
 		end
 	end
 end

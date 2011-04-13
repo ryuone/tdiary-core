@@ -11,14 +11,15 @@ describe TDiary::TdiaryDiary do
 
 	describe '#append' do
 		before do
-			source = <<-'EOF'
+			@source = <<-'EOF'
 subTitle
 <p>honbun</p>
 
 subTitle2
 <p>honbun</p>
+
 			EOF
-			@diary.append(source)
+			@diary.append(@source)
 		end
 
 		context 'HTML' do
@@ -35,7 +36,7 @@ subTitle2
 </div>
 				EOF
 			end
-			it { @diary.to_html({'anchor' => true, 'index' => ''}).should eq @html.chomp }
+			it { @diary.to_html.should eq @html.chomp }
 		end
 
 		context 'CHTML' do
@@ -49,7 +50,12 @@ subTitle2
 <p>honbun</p><%= section_leave_proc( Time::at( 1041346800 ) ) %>
 				EOF
 			end
-			it { @diary.to_html({'anchor' => true, 'index' => ''}, :CHTML).should eq @html }
+			it { @diary.to_html({}, :CHTML).should eq @html }
+		end
+
+
+		context 'to_src' do
+			it { @diary.to_src.should eq @source }
 		end
 	end
 
@@ -86,7 +92,54 @@ replaceTitle2
 </div>
 			EOF
 		end
-		it { @diary.to_html({'anchor' => true, 'index' => ''}).should eq @html.chomp }
+		it { @diary.to_html.should eq @html.chomp }
+	end
+
+	describe '#add_section' do
+		before do
+			source = <<-'EOF'
+subTitle
+<p>honbun</p>
+			EOF
+			@diary.append(source)
+			@diary.add_section('subTitle2', '<p>honbun</p>')
+
+			@html = <<-'EOF'
+<div class="section">
+<%= section_enter_proc( Time::at( 1041346800 ) ) %>
+<h3><%= subtitle_proc( Time::at( 1041346800 ), "subTitle" ) %></h3>
+<p>honbun</p><%= section_leave_proc( Time::at( 1041346800 ) ) %>
+</div><div class="section">
+<%= section_enter_proc( Time::at( 1041346800 ) ) %>
+<h3><%= subtitle_proc( Time::at( 1041346800 ), "subTitle2" ) %></h3>
+<p>honbun</p><%= section_leave_proc( Time::at( 1041346800 ) ) %>
+</div>
+			EOF
+		end
+		it { @diary.to_html.should eq @html.chomp }
+	end
+
+	describe '#delete_section' do
+		before do
+			source = <<-'EOF'
+subTitle
+<p>honbun</p>
+
+subTitle2
+<p>honbun</p>
+			EOF
+			@diary.append(source)
+			@diary.delete_section(1)
+
+			@html = <<-'EOF'
+<div class="section">
+<%= section_enter_proc( Time::at( 1041346800 ) ) %>
+<h3><%= subtitle_proc( Time::at( 1041346800 ), "subTitle2" ) %></h3>
+<p>honbun</p><%= section_leave_proc( Time::at( 1041346800 ) ) %>
+</div>
+			EOF
+		end
+		it { @diary.to_html.should eq @html.chomp }
 	end
 
 	describe 'test_tdiary_style2' do
@@ -108,7 +161,7 @@ replaceTitle2
 </div>
 				EOF
 			end
-			it { @diary.to_html({'anchor' => true, 'index' => ''}).should eq @html.chomp }
+			it { @diary.to_html.should eq @html.chomp }
 		end
 
 		context 'CHTML' do
@@ -119,7 +172,7 @@ replaceTitle2
 <p>honbun</p><%= section_leave_proc( Time::at( 1041346800 ) ) %>
 				EOF
 			end
-			it { @diary.to_html({'anchor' => true, 'index' => ''}, :CHTML).should eq @html }
+			it { @diary.to_html({}, :CHTML).should eq @html }
 		end
 	end
 
@@ -156,7 +209,7 @@ ge%><%= section_leave_proc( Time::at( 1041346800 ) ) %>
 </div>
 				EOF
 			end
-			it { @diary.to_html({'anchor' => true, 'index' => ''}).should eq @html.chomp }
+			it { @diary.to_html.should eq @html.chomp }
 		end
 
 		context 'CHTML' do
@@ -174,7 +227,7 @@ ge%>b
 ge%><%= section_leave_proc( Time::at( 1041346800 ) ) %>
 				EOF
 			end
-			it { @diary.to_html({'anchor' => true, 'index' => ''}, :CHTML).should eq @html }
+			it { @diary.to_html({}, :CHTML).should eq @html }
 		end
 	end
 end

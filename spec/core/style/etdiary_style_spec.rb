@@ -11,7 +11,7 @@ describe TDiary::EtdiaryDiary do
 
 	describe '#append' do
 		before do
-			source = <<-'EOF'
+			@source = <<-'EOF'
 hogehoge
 fugafuga
 
@@ -45,9 +45,8 @@ Section without title and anchor.
 
 <<<>>>
 Section without title.
-
 			EOF
-			@diary.append(source)
+			@diary.append(@source)
 		end
 
 		context 'HTML' do
@@ -100,7 +99,7 @@ Section without title.
 </div>
 				EOF
 			end
-			it { @diary.to_html({'anchor' => true, 'index' => ''}).should eq @html }
+			it { @diary.to_html.should eq @html }
 		end
 
 		context 'CHTML' do
@@ -148,8 +147,79 @@ Section without title.
 <%=section_leave_proc( Time::at( 1041346800 ) )%>
 				EOF
 			end
-			it { @diary.to_html({'anchor' => true, 'index' => ''}, :CHTML).should eq @html }
+			it { @diary.to_html({'anchor' => true, 'index' => true}, :CHTML).should eq @html }
 		end
+
+		context 'to_src' do
+			it { @diary.to_src.should eq @source }
+		end
+	end
+
+	describe '#add_section' do
+		before do
+			source = <<-'EOF'
+<<subTitle>>
+honbun
+
+<<<>subTitleH4>>
+honbun
+
+			EOF
+			@diary.append(source)
+			@diary.add_section('subTitle2', 'honbun')
+
+			@html = <<-'EOF'
+<div class="section">
+<%=section_enter_proc( Time::at( 1041346800 ) )%>
+<h3><%= subtitle_proc( Time::at( 1041346800 ), "subTitle" ) %></h3>
+<p>
+honbun
+</p>
+<h4><%= subtitle_proc( Time::at( 1041346800 ), "subTitleH4" ) %>:</h4>
+<p>
+honbun
+</p>
+<%=section_leave_proc( Time::at( 1041346800 ) )%>
+</div>
+
+<div class="section">
+<%=section_enter_proc( Time::at( 1041346800 ) )%>
+<h3><%= subtitle_proc( Time::at( 1041346800 ), "subTitle2" ) %></h3>
+<p>
+honbun
+</p>
+<%=section_leave_proc( Time::at( 1041346800 ) )%>
+</div>
+			EOF
+		end
+		it { @diary.to_html.should eq @html }
+	end
+
+	describe '#delete_section' do
+		before do
+			source = <<-'EOF'
+<<subTitle>>
+honbun
+
+<<subTitle2>>
+honbun
+
+			EOF
+			@diary.append(source)
+			@diary.delete_section(1)
+
+			@html = <<-'EOF'
+<div class="section">
+<%=section_enter_proc( Time::at( 1041346800 ) )%>
+<h3><%= subtitle_proc( Time::at( 1041346800 ), "subTitle2" ) %></h3>
+<p>
+honbun
+</p>
+<%=section_leave_proc( Time::at( 1041346800 ) )%>
+</div>
+			EOF
+		end
+		it { @diary.to_html.should eq @html }
 	end
 
 	describe '#replace' do
@@ -189,7 +259,7 @@ replace
 </div>
 			EOF
 		end
-		it { @diary.to_html({'anchor' => true, 'index' => ''}).should eq @html }
+		it { @diary.to_html.should eq @html }
 	end
 
 	describe 'test_etdiary_unterminated_tag' do
@@ -216,7 +286,7 @@ paragraph
 </div>
 				EOF
 			end
-			it { @diary.to_html({'anchor' => true, 'index' => ''}).should eq @html }
+			it { @diary.to_html.should eq @html }
 		end
 
 		context 'CHTML' do
@@ -231,7 +301,7 @@ paragraph
 <%=section_leave_proc( Time::at( 1041346800 ) )%>
 				EOF
 			end
-			it { @diary.to_html({'anchor' => true, 'index' => ''}, :CHTML).should eq @html }
+			it { @diary.to_html({'anchor' => true, 'index' => true}, :CHTML).should eq @html }
 		end
 	end
 
@@ -253,7 +323,7 @@ paragraph
 </div>
 				EOF
 			end
-			it { @diary.to_html({'anchor' => true, 'index' => ''}).should eq @html }
+			it { @diary.to_html.should eq @html }
 		end
 
 		context 'CHTML' do
@@ -265,7 +335,7 @@ paragraph
 <%=section_leave_proc( Time::at( 1041346800 ) )%>
 				EOF
 			end
-			it { @diary.to_html({'anchor' => true, 'index' => ''}, :CHTML).should eq @html }
+			it { @diary.to_html({'anchor' => true, 'index' => true}, :CHTML).should eq @html }
 		end
 	end
 
@@ -291,7 +361,7 @@ fuga
 </div>
 				EOF
 			end
-			it { @diary.to_html({'anchor' => true, 'index' => ''}).should eq @html }
+			it { @diary.to_html.should eq @html }
 		end
 
 		context 'CHTML' do
@@ -305,7 +375,7 @@ fuga
 <%=section_leave_proc( Time::at( 1041346800 ) )%>
 				EOF
 			end
-			it { @diary.to_html({'anchor' => true, 'index' => ''}, :CHTML).should eq @html }
+			it { @diary.to_html({'anchor' => true, 'index' => true}, :CHTML).should eq @html }
 		end
 	end
 
@@ -333,7 +403,7 @@ fuga
 </div>
 				EOF
 			end
-			it { @diary.to_html({'anchor' => true, 'index' => ''}).should eq @html }
+			it { @diary.to_html.should eq @html }
 		end
 
 		context 'CHTML' do
@@ -345,7 +415,7 @@ fuga
 <%=section_leave_proc( Time::at( 1041346800 ) )%>
 				EOF
 			end
-			it { @diary.to_html({'anchor' => true, 'index' => ''}, :CHTML).should eq @html }
+			it { @diary.to_html({'anchor' => true, 'index' => true}, :CHTML).should eq @html }
 		end
 	end
 
@@ -378,7 +448,7 @@ fuga
 </div>
 				EOF
 			end
-			it { @diary.to_html({'anchor' => true, 'index' => ''}).should eq @html }
+			it { @diary.to_html.should eq @html }
 		end
 
 		context 'CHTML' do
@@ -394,7 +464,7 @@ fuga
 <%=section_leave_proc( Time::at( 1041346800 ) )%>
 				EOF
 			end
-			it { @diary.to_html({'anchor' => true, 'index' => ''}, :CHTML).should eq @html }
+			it { @diary.to_html({'anchor' => true, 'index' => true}, :CHTML).should eq @html }
 		end
 	end
 

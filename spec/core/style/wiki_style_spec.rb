@@ -11,7 +11,7 @@ describe TDiary::WikiDiary do
 
 	describe '#append' do
 		before do
-			source = <<-'EOF'
+			@source = <<-'EOF'
 ! subTitle
 honbun
 
@@ -19,7 +19,7 @@ honbun
 honbun
 
 			EOF
-			@diary.append(source)
+			@diary.append(@source)
 		end
 
 		context 'HTML' do
@@ -35,7 +35,7 @@ honbun
 </div>
 				EOF
 			end
-			it { @diary.to_html({'anchor' => true, 'index' => ''}).should eq @html }
+			it { @diary.to_html.should eq @html }
 		end
 
 		context 'CHTML' do
@@ -49,7 +49,11 @@ honbun
 <%=section_leave_proc( Time::at( 1041346800 ) )%>
 				EOF
 			end
-			it { @diary.to_html({'anchor' => true, 'index' => ''}, :CHTML).should eq @html }
+			it { @diary.to_html({}, :CHTML).should eq @html }
+		end
+
+		context 'to_src' do
+			it { @diary.to_src.should eq @source }
 		end
 	end
 
@@ -86,7 +90,67 @@ replace
 </div>
 			EOF
 		end
-		it { @diary.to_html({'anchor' => true, 'index' => ''}).should eq @html }
+		it { @diary.to_html.should eq @html }
+	end
+
+	describe '#add_section' do
+		before do
+			source = <<-'EOF'
+! subTitle
+honbun
+
+!! subTitleH4
+honbun
+
+			EOF
+
+			@diary.append(source)
+			@diary.add_section('subTitle2', 'honbun')
+
+			@html = <<-'EOF'
+<div class="section">
+<%=section_enter_proc( Time::at( 1041346800 ) )%>
+<h3><%= subtitle_proc( Time::at( 1041346800 ), "subTitle" ) %></h3>
+<p>honbun</p>
+<h4>subTitleH4</h4>
+<p>honbun</p>
+<%=section_leave_proc( Time::at( 1041346800 ) )%>
+</div>
+<div class="section">
+<%=section_enter_proc( Time::at( 1041346800 ) )%>
+<h3><%= subtitle_proc( Time::at( 1041346800 ), "subTitle2" ) %></h3>
+<p>honbun</p>
+<%=section_leave_proc( Time::at( 1041346800 ) )%>
+</div>
+			EOF
+		end
+		it { @diary.to_html.should eq @html }
+	end
+
+	describe '#delete_section' do
+		before do
+			source = <<-'EOF'
+! subTitle
+honbun
+
+! subTitle2
+honbun
+
+			EOF
+
+			@diary.append(source)
+			@diary.delete_section(1)
+
+			@html = <<-'EOF'
+<div class="section">
+<%=section_enter_proc( Time::at( 1041346800 ) )%>
+<h3><%= subtitle_proc( Time::at( 1041346800 ), "subTitle2" ) %></h3>
+<p>honbun</p>
+<%=section_leave_proc( Time::at( 1041346800 ) )%>
+</div>
+			EOF
+		end
+		it { @diary.to_html.should eq @html }
 	end
 
 	describe 'test_wiki_style2' do
@@ -114,7 +178,7 @@ honbun
 </div>
 				EOF
 			end
-			it { @diary.to_html({'anchor' => true, 'index' => ''}).should eq @html }
+			it { @diary.to_html.should eq @html }
 		end
 
 		context 'CHTML' do
@@ -127,7 +191,7 @@ honbun
 <%=section_leave_proc( Time::at( 1041346800 ) )%>
 				EOF
 			end
-			it { @diary.to_html({'anchor' => true, 'index' => ''}, :CHTML).should eq @html }
+			it { @diary.to_html({}, :CHTML).should eq @html }
 		end
 	end
 
@@ -166,7 +230,7 @@ honbun
 </div>
 				EOF
 			end
-			it { @diary.to_html({'anchor' => true, 'index' => ''}).should eq @html }
+			it { @diary.to_html.should eq @html }
 		end
 
 		context 'CHTML' do
@@ -183,7 +247,7 @@ honbun
 <%=section_leave_proc( Time::at( 1041346800 ) )%>
 				EOF
 			end
-			it { @diary.to_html({'anchor' => true, 'index' => ''}, :CHTML).should eq @html }
+			it { @diary.to_html({}, :CHTML).should eq @html }
 		end
 	end
 
@@ -229,7 +293,7 @@ ge
 </div>
 				EOF
 			end
-			it { @diary.to_html({'anchor' => true, 'index' => ''}).should eq @html }
+			it { @diary.to_html.should eq @html }
 		end
 
 		context 'CHTML' do
@@ -253,7 +317,7 @@ ge
 <%=section_leave_proc( Time::at( 1041346800 ) )%>
 				EOF
 			end
-			it { @diary.to_html({'anchor' => true, 'index' => ''}, :CHTML).should eq @html }
+			it { @diary.to_html({}, :CHTML).should eq @html }
 		end
 	end
 
@@ -301,7 +365,7 @@ http://ja.wikipedia.org/wiki/%E9%AF%96
 </div>
 				EOF
 			end
-			it { @diary.to_html({'anchor' => true, 'index' => ''}).should eq @html }
+			it { @diary.to_html.should eq @html }
 		end
 
 		context 'CHTML' do
@@ -321,18 +385,18 @@ http://ja.wikipedia.org/wiki/%E9%AF%96
 <%=section_leave_proc( Time::at( 1041346800 ) )%>
 				EOF
 			end
-			it { @diary.to_html({'anchor' => true, 'index' => ''}, :CHTML).should eq @html }
+			it { @diary.to_html({}, :CHTML).should eq @html }
 		end
 	end
 
-	def test_append_without_subtitle
+	describe 'test_append_without_subtitle' do
 		before do
 			source = <<-'EOF'
 ! subTitle
 body
 			EOF
 
-			sourceappend 0 <<-'EOF'
+			sourceappend = <<-'EOF'
 appended body
 			EOF
 			@diary.append(source)
@@ -351,7 +415,7 @@ appended body
 </div>
 				EOF
 			end
-			it { @diary.to_html({'anchor' => true, 'index' => ''}).should eq @html }
+			it { @diary.to_html.should eq @html }
 		end
 
 		context 'CHTML' do
@@ -364,7 +428,7 @@ appended body
 <%=section_leave_proc( Time::at( 1041346800 ) )%>
 				EOF
 			end
-			it { @diary.to_html({'anchor' => true, 'index' => ''}, :CHTML).should eq @html }
+			it { @diary.to_html({}, :CHTML).should eq @html }
 		end
 	end
 end

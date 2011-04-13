@@ -368,7 +368,7 @@ module TDiary
 			r
 		end
 	
-		def to_html( opt, mode = :HTML )
+		def to_html( opt = {}, mode = :HTML )
 			r = ''
 			idx = 1
 			each_section do |section|
@@ -383,8 +383,6 @@ module TDiary
 		end
 	end
 end
-
-
 
 # Local Variables:
 # mode: ruby

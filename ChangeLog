@@ -1,3 +1,35 @@
+2011-04-11  SHIBATA Hiroshi  <shibata.hiroshi@gmail.com>
+
+	* index.fcgi: workaround untaint LOAD_PATH for rubygems library path is always tainted.
+	* README, doc/*: rewrite README, and i18n documentation moved.
+
+2011-04-07  SHIBATA Hiroshi  <shibata.hiroshi@gmail.com>
+
+	* index.rb, update.rb: added 'type' headed instead of 'Content-Type' when running cgi.rb
+
+2011-04-06  SHIBATA Hiroshi  <shibata.hiroshi@gmail.com>
+
+	* tdiary.rb: untaint external load_path. thanks tamoot.
+
+2011-04-03  SHIBATA Hiroshi  <shibata.hiroshi@gmail.com>
+
+	* plugin/00default.rb: bug fix for navi_user_edit, unshown prev/next day anchor.
+
+2011-03-31  SHIBATA Hiroshi  <shibata.hiroshi@gmail.com>
+
+	* plugin/05referer.rb, tdiary/{tdiary.rb, defaultio.rb}: bug fix for 1.8.6 compatibility.
+
+2011-03-22  KADO Masanori  <kdmsnr@gmail.com>
+
+	* tdiary.rb, skel/diary.rhtml: add comment_leave_proc.
+
+2011-03-21  TADA Tadashi <t@tdtds.jp>
+	* deleted TrackBack sending and receiving feature.
+
+2011-03-20  SHIBATA Hiroshi  <shibata.hiroshi@gmail.com>
+
+	* tdiary/wiki_style.rb: fixed bug, WikiDiary#add_section.
+
 2011-03-05  SHIBATA Hiroshi  <shibata.hiroshi@gmail.com>
 
 	* tdiary/tdiary_style.rb: fix 1.8 backward compatibility. thx tamoot.
@@ -394,7 +426,7 @@
 	tdiary.rb: integrate logger and spamfilter debug log.
 
 2008-06-15 SHIBATA Hiroshi <shibata.hiroshi@gmail.com>
-	* tdiary.rb: changed logger path option. 
+	* tdiary.rb: changed logger path option.
 
 2008-06-09 TADA Tadashi <sho@spc.gr.jp>
 	* self converting to UTF-8. thanks kazuhiko.
