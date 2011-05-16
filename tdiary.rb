@@ -1078,6 +1078,8 @@ module TDiary
 			end
 			@io = @conf.io_class.new( self )
 
+			@headerfile = "header.rhtml"
+			@footerfile = "footer.rhtml"
 			# load logger
 			load_logger
 		end
@@ -1127,7 +1129,7 @@ module TDiary
 				r = File::open( "#{cache_path}/#{cache_file( prefix )}" ) {|f| f.read } rescue nil
 			end
 			if r.nil?
-				files = ["header.rhtml", @rhtml, "footer.rhtml"]
+				files = [@headerfile, @rhtml, @footerfile]
 				rhtml = files.collect {|file|
 					path = "#{PATH}/skel/#{prefix}#{file}"
 					begin
@@ -1403,6 +1405,7 @@ EOS
 	class TDiaryAdmin < TDiaryAuthorOnlyBase
 		def initialize( cgi, rhtml, conf )
 			super
+			load_plugins
 			begin
 				@date = Time::local( @cgi.params['year'][0].to_i, @cgi.params['month'][0].to_i, @cgi.params['day'][0].to_i )
 			rescue ArgumentError, NameError
