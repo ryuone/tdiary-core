@@ -41,8 +41,15 @@ add_header_proc do
 	HEADER
 end
 
-if @html5plugin.nil? then
+def once
+	unless ::TDiary.instance_variable_defined? :@_01defaulthtml5_
+		yield
+	end
+end
+
+once do
 	module ::TDiary
+		@_01defaulthtml5_=true
 		class TDiaryBase
 			alias :_old_do_eval_rhtml :do_eval_rhtml
 
@@ -97,7 +104,6 @@ if @html5plugin.nil? then
 		end
 	end
 end
-@html5plugin = true
 
 # Local Variables:
 # mode: ruby
