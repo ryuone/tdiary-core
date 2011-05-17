@@ -34,6 +34,7 @@ add_header_proc do
 	#{icon_tag}
 	#{description_tag}
 	#{jquery_tag.chomp}
+	#{script_tag.chomp}
 	#{css_tag.chomp}
 	#{iphone_tag.chomp}
 	#{title_tag.chomp}
