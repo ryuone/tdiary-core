@@ -13,6 +13,7 @@ def navi
 	result = %Q[<header class="adminmenu">\n]
 	result << navi_user
 	result << navi_admin
+	result << calendar
 	result << %Q[</header>]
 end
 
