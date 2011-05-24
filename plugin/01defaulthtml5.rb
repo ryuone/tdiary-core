@@ -60,6 +60,7 @@ once do
 				@rhtml      = "latest5.rhtml"  if @rhtml == "latest.rhtml"
 				@rhtml      = "day5.rhtml"     if @rhtml == "day.rhtml"
 				@rhtml      = "update5.rhtml"  if @rhtml == "update.rhtml"
+				@rhtml      = "preview5.rhtml" if @rhtml == "preview.rhtml"
 				@footerfile = "footer5.rhtml"
 				_old_do_eval_rhtml prefix
 			end
