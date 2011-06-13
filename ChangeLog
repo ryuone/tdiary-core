@@ -1,3 +1,20 @@
+2011-06-13  TADA Tadashi <t@tdtds.jp>
+	* plugin/js/disp_referrer.rb: maintained some search engines.
+
+2011-06-12  TADA Tadashi <t@tdtds.jp>
+	* js/00default.js, js/category.js: fixed: running on MSIE(8) or Firefox(4).
+
+2011-06-11  TADA Tadashi <t@tdtds.jp>
+	* plugin/category.rb, js/category.js: dropdown list style on edit support.
+	* plugin/00default.rb: sorted javascripts by file name.
+
+2011-06-06  TADA Tadashi <t@tdtds.jp>
+	* avoid duplicate loading of javascript files.
+	* plugin/category.rb, js/category.js: splitted js file and rewrited on jQuery.
+
+2011-06-06  OGAWA KenIchi <kenichi@ice.email.ne.jp>
+	* plugin/pre_wrap.rb: fixed error about invalid selector.
+
 2011-06-02  TADA Tadashi <t@tdtds.jp>
 	* replaced div elements into span for better HTML. #35
 	* inserted some ids into update form.
