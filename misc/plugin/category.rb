@@ -12,7 +12,7 @@ autoload :Kconv, 'kconv'
 def category_init
 	@conf['category.header1'] ||= %Q[<div class="adminmenu">\n<p>\n<%= category_navi %>\n</p>\n</div>\n]
 	@conf['category.header2'] ||= %Q[<p>Categories |\n<%= category_list %>\n</p>\n]
-	@conf['category.edit_support'] = true if @conf['category.edit_support'].nil?
+	@conf['category.edit_support'] = @conf['category.edit_support'].to_i rescue 1
 end
 category_init
 
@@ -611,39 +611,40 @@ end # module Category
 @category_cache = Category::Cache.new(@conf, binding)
 
 #
-# display categories you use on update form
+# display categories on update form
 #
-if @conf['category.edit_support'] then
-	add_header_proc do
-		%Q[\t<script type="text/javascript"><!--
-		function inj_c(str) {
-			var textarea = window.document.forms[0].body;
-			textarea.focus();
-			if (document.selection) { // IE, Opera
-				var range = document.selection.createRange();
-				range.text = str;
-			} else if (textarea.selectionStart != undefined) { // mozilla
-				var start = textarea.selectionStart;
-				var end = textarea.selectionEnd;
-				textarea.value = textarea.value.substring(0, start) + str + textarea.value.substring(end);
-				textarea.setSelectionRange(start + str.length, start + str.length);
-			 } else {
-				textarea.value += str;
-			 }
-		}
-		//-->
-		</script>\n]
+def category_edit_support_flatlist
+	ret = ''
+	ret << '<div class="field title">'
+	ret << "#{@category_conf_label}:\n"
+	@categories.sort_by{|e| e.downcase}.each do |c|
+		ret << %Q!| <span class="category-item">#{h c}</span>\n!
 	end
+	ret << "|\n</div>\n<br>\n"
+	ret
+end
 
+def category_edit_support_dropdown
+	ret = ''
+	ret << '<div class="field title">'
+	ret << %Q|#{@category_conf_label}: <select id="category-candidate" name="category-candidate">\n|
+	@categories.sort_by{|e| e.downcase}.each do |c|
+		ret << %Q!<option>#{h c}</option>\n!
+	end
+	ret << "|\n</select>\n</div>\n<br>\n"
+	ret
+end
+
+if @conf['category.edit_support'] != 0 then
+	enable_js( 'category.js' )
 	add_edit_proc do |date|
 		ret = ''
 		unless @categories.size == 0 then
-			ret << '<div class="field title">'
-			ret << "#{@category_conf_label}:\n"
-			@categories.sort_by{|e| e.downcase}.each do |c|
-				ret << %Q!| <a href="javascript:inj_c(&quot;[#{h c}]&quot;)">#{h c}</a>\n!
+			ret << if @conf['category.edit_support'] == 2 then
+				category_edit_support_dropdown
+			else
+				category_edit_support_flatlist
 			end
-			ret << "|\n</div>\n<br>\n"
 		end
 	end
 end
@@ -732,7 +733,7 @@ if @mode == 'conf' || @mode == 'saveconf'
 			if ["month", "quarter", "half", "year", "all"].index(@cgi.params["category.period"][0])
 				@conf["category.period"] = @cgi.params["category.period"][0]
 			end
-			@conf['category.edit_support'] = (@cgi.params['category.edit_support'][0] == 'true')
+			@conf['category.edit_support'] = (@cgi.params['category.edit_support'][0] || '1').to_i
 		end
 		category_conf_html
 	end
