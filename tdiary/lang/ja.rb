@@ -2,15 +2,9 @@
 #
 # tDiary language setup: Japanese(ja)
 #
-# Copyright (C) 2001-2007, TADA Tadashi <t@tdtds.jp>
+# Copyright (C) 2001-2011, TADA Tadashi <t@tdtds.jp>
 # You can redistribute it and/or modify it under GPL2.
 #
-
-require 'nkf'
-begin
-	require "iconv"
-rescue LoadError
-end
 
 def html_lang
 	'ja-JP'
@@ -28,38 +22,33 @@ def mobile_encoding
 	'Shift_JIS'
 end
 
-def to_native( str, charset = nil )
-	begin
-		Iconv.conv('utf-8', charset || 'utf-8', str)
-	rescue
-		from = case charset
-			when /^utf-8$/i
-				'W'
-			when /^shift_jis/i
-				'S'
-			when /^EUC-JP/i
-				'E'
-			else
-				''
+if String.method_defined?(:encode)
+	def to_mobile( str )
+		str.encode(mobile_encoding, {:invalid => :replace, :undef => :replace})
+	end
+
+	def to_mail( str )
+		str.encode('iso-2022-jp', {:invalid => :replace, :undef => :replace})
+	end
+else
+	require 'nkf'
+	require 'iconv'
+
+	def to_mobile( str )
+		NKF::nkf( '-m0 -W -s', str )
+	end
+
+	def to_mail( str )
+		begin
+			Iconv.conv('iso-2022-jp', 'utf-8', str)
+		rescue
+			NKF::nkf('-m0 -W -j', str)
 		end
-		NKF::nkf("-m0 -#{from}w", str)
 	end
 end
 
 def migrate_to_utf8( str )
 	to_native( str, encoding_old )
-end
-
-def to_mobile( str )
-	NKF::nkf( '-m0 -W -s', str )
-end
-
-def to_mail( str )
-	begin
-		Iconv.conv('iso-2022-jp', 'utf-8', str)
-	rescue
-		NKF::nkf('-m0 -W -j', str)
-	end
 end
 
 def shorten( str, len = 120 )

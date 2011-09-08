@@ -1,3 +1,103 @@
+2011-09-08  Kazuhiko  <kazuhiko@fdiary.net>
+	* tdiary/lang/ja.rb, tdiary/lang/zh.rb: replace invalid or undefined characters in String#encode to avoid exceptions.
+
+2011-09-07  Kazuhiko  <kazuhiko@fdiary.net>
+	* tdiary/config.rb, tdiary/lang/en.rb, tdiary/lang/ja.rb, tdiary/lang/zh.rb: define to_native method in Config class instead of each language file.
+
+	* tdiary/lang/ja.rb (to_native): move 'require' to the top of this file because to_native can be called in $SAFE=4 environment.
+	* tdiary/compatible.rb: mark tainted objects as untrusted too to prevent SecurityError in Ruby 1.9, patch by Kazuhiro NISHIYAMA <zn@mbf.nifty.com>.
+
+2011-09-06  Kazuhiko  <kazuhiko@fdiary.net>
+	* tdiary.rb, update.rb: handle encoding properly in mobile mode.
+	* tdiary/lang/ja.rb (to_native): support ASCII-8BIT and broken UTF-8 input.
+
+2011-09-04 TADA Tadashi <t@tdtds.jp>
+	* plugin/00default.rb: apply plugin for subtitle when generating subtitle elements.
+
+2011-08-28  SHIBATA Hiroshi  <shibata.hiroshi@gmail.com>
+	* tdiary/compatible.rb: remove String#encode, affects json_pure gems.
+
+2011-08-25  SHIBATA Hiroshi  <shibata.hiroshi@gmail.com>
+	* re-bundle json_pure
+	* tdiary/compatible.rb, tdiary/referer_manager.rb, tdiary.rb: check to Encoding class defined.
+
+2011-08-19 TADA Tadashi <t@tdtds.jp>
+	* theme/default: fixed: deleted background image from gustav.
+
+2011-08-17 TADA Tadashi <t@tdtds.jp>
+	* misc/plugin/footnote.rb: initialized variables to fix error on category page. #89
+
+2011-08-09  TADA Tadashi <t@tdtds.jp>
+	* js/01conf.js: reloaded after savng when csrf_protection plugin only. #79
+
+2011-08-05 hb <smallstyle@gmail.com>
+	* misc/plugin/image.rb, js/image.js: upload/delete image in ajax.
+
+2011-08-01 hb <smallstyle@gmail.com>
+	* misc/plugin/image.rb: supported multiple upload.
+
+2011-07-31  TADA Tadashi <t@tdtds.jp>
+	* misc/plugin/my-ex.rb: fixed error when tb-show.rb disabled.
+
+2011-07-29  TADA Tadashi <t@tdtds.jp>
+	* js/00default.js: fixed over escape in makePluginTag().
+	* Release 3.1.0.
+
+2011-07-28  TADA Tadashi <t@tdtds.jp>
+	* js/01conf.js: reloaded after savng when sp plugin only. #76
+
+2011-07-26  TADA Tadashi <t@tdtds.jp>
+	* plugin/00default.rb: added js_url method lile theme_url.
+	* misc/plugin/disp_referrer.rb: ignored encoding error (workaround). thanks arton. #74
+
+2011-07-22  TADA Tadashi <t@tdtds.jp>
+	* skel/header.rb, skel/footer.rb: added div.whole-content inside body.
+	* rename theme/default to theme/tdiary2.
+	* added new theme default for tDiary 3.1.
+
+2011-07-18  TADA Tadashi <t@tdtds.jp>
+	* plugin/00default.rb: replaced sub to lines.
+	* js/01conf.js: fixed: lost CR/LF in textarea.
+
+2011-07-06  TADA Tadashi <t@tdtds.jp>
+	* specified id attr for conf form element.
+
+2011-07-05  TADA Tadashi <t@tdtds.jp>
+	* saved preferences in ajax.
+
+2011-07-03  SHIBATA Hiroshi  <shibata.hiroshi@gmail.com>
+	* merge tdiary-request. use Rack like interface when cgi mode.
+
+2011-06-29  MATSUOKA Kohei <kohei@machu.jp>
+	* vendor/json_pure-1.5.3: added json_pure library to use to_json method. #58
+	* tdiary/compatible.rb: added String#encoding to avoid NoMethodError.
+
+2011-06-25  TADA Tadashi <t@tdtds.jp>
+	* plugin/image.rb, js/image.js: using jQuery to insert image tags. #54
+	* plugin/image.rb: fixed encoding error on ruby 1.9.
+	* skel/update.rhtml.zh: removed garbage tags.
+	* js/category.js: changed cursor when hover.
+
+2011-06-25  MATSUOKA Kohei <kohei@machu.jp>
+	* js/highlight.js: fixed XSS vulnerability. #59
+
+2011-06-21  TADA Tadashi <t@tdtds.jp>
+	* added vendor/imagesize.
+	* plugin/image.rb: using ImageSize class getting image type and size. #56
+
+2011-06-20  MATSUOKA Kohei <kohei@machu.jp>
+	* plugin/highlight.rb, js/highlight.js: rewrited on jQuery. #38, #53
+
+2011-06-20  TADA Tadashi <t@tdtds.jp>
+	* plugin/image.rb, js/image.rb: ported to jQuery. #54
+
+2011-06-18  TADA Tadashi <t@tdtds.jp>
+	* plugin/00default.rb: added query string to javascripts for disable browser cache.
+
+2011-06-16  TADA Tadashi <t@tdtds.jp>
+	* plugin/amazon.rb: preferences for using bit.ly. #47
+	* js/00default.js: set $tDiary.blogkit to false in default. #48
+
 2011-06-13  TADA Tadashi <t@tdtds.jp>
 	* plugin/js/disp_referrer.rb: maintained some search engines.
 

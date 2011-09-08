@@ -10,6 +10,7 @@
  */
 $tDiary = new Object();
 $tDiary.plugin = new Object();
+$tDiary.blogkit = false;
 
 /*
 	utility functions
@@ -30,5 +31,29 @@ $.fn.extend({
 			elem.value = orig.substr(0, posStart) + text + orig.substr(posStart);
 			elem.setSelectionRange(posEnd, posEnd);
 		}
+	}
+});
+
+$.extend({
+	makePluginTag: function(name, params){
+		params = params || [];
+		var tag = [];
+		
+		switch($tDiary.style){
+			case 'wiki':
+			case 'markdown':
+				tag = ['{{', '}}'];
+				break;
+			case 'rd':
+				tag = ['((%', '%))'];
+				break;
+			default:
+				tag = ['<%=', '%>'];
+				break;
+		}
+		
+		return tag[0] + name + ' ' + ($.isFunction(params) ? params() : $.map(params, function(p){
+				return '"' + p + '"';
+			})).join(', ') + tag[1];
 	}
 });
