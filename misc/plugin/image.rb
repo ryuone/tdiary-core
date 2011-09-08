@@ -55,7 +55,7 @@
 unless @resource_loaded then
 	def image_error_num( max ); "画像は1日#{h max}枚までです。不要な画像を削除してから追加してください"; end
 	def image_error_size( max ); "画像の最大サイズは#{h max}バイトまでです"; end
-	def image_label_list_caption; '絵日記(一覧・削除)'; end
+	def image_label_list_caption; '絵日記(一覧・削除) - 画像をクリックすると本文に追加できます'; end
 	def image_label_add_caption; '絵日記(追加)'; end
 	def image_label_description; '画像の説明'; end
 	def image_label_add_plugin; '本文に追加'; end
@@ -81,7 +81,7 @@ def image( id, alt = 'image', thumbnail = nil, size = nil, place = 'photo' )
 			size = %Q| width="#{size.to_i}"|
 		end
 	elsif @image_maxwidth and not @conf.secure then
-		File::open( "#{@image_dir}/#{image}".untaint ) do |f|
+		File::open( "#{@image_dir}/#{image}".untaint, 'rb' ) do |f|
 			t, w, h = image_info( f )
 			if w > @image_maxwidth then
 				size = %Q[ width="#{h @image_maxwidth}"]
@@ -133,44 +133,9 @@ end
 #
 
 def image_info( f )
-	image_type = nil
-	image_height = nil
-	image_width = nil
-
-	sig = f.read( 24 )
-	if /\A\x89PNG\x0D\x0A\x1A\x0A(....)IHDR(........)/onm =~ sig
-		image_type = 'png'
-		image_width, image_height = $2.unpack( 'NN' )
-
-	elsif /\AGIF8[79]a(....)/onm =~ sig
-		image_type   = 'gif'
-		image_width, image_height = $1.unpack( 'vv' )
-
-	elsif /\A\xFF\xD8/onm =~ sig
-		image_type = 'jpg'
-		data = $'
-		until data.empty?
-			break if data[0] != 0xFF
-			break if data[1] == 0xD9
-
-			data_size = data[2,2].unpack( 'n' ).first + 2
-			case data[1]
-			when 0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce, 0xcf
-				image_height, image_width = data[5,4].unpack('nn')
-				break
-			else
-				if data.size < data_size
-					f.seek(data_size - data.size, IO::SEEK_CUR)
-					data = ''
-				else
-					data = data[data_size .. -1]
-				end
-				data << f.read( 128 ) if data.size <= 4
-			end
-		end
-	end
-
-	return image_type, image_width, image_height
+	require 'image_size'
+	info = ImageSize::new( f.read )
+	[info.get_type.downcase.sub( /jpeg/, 'jpg' ), info.get_size].flatten
 end
 
 def image_ext
@@ -195,8 +160,11 @@ def image_list( date )
 	list
 end
 
-if @conf.secure and /^(form|edit|formplugin|showcomment)$/ =~ @mode then
-	@image_list = image_list( @date.strftime( '%Y%m%d' ) )
+if /^(form|edit|formplugin|showcomment)$/ =~ @mode then
+	enable_js( 'image.js' )
+	add_js_setting( '$tDiary.plugin.image' )
+	add_js_setting( '$tDiary.plugin.image.alt', %Q|'#{image_label_description}'| )
+	@image_list = image_list( @date.strftime( '%Y%m%d' ) ) if @conf.secure
 end
 
 if /^formplugin$/ =~ @mode then
@@ -207,26 +175,29 @@ if /^formplugin$/ =~ @mode then
 	   date = @date.strftime( "%Y%m%d" )
 		images = image_list( date )
 	   if @cgi.params['plugin_image_addimage'][0]
-	      filename = @cgi.params['plugin_image_file'][0].original_filename
-			extension, = image_info( @cgi.params['plugin_image_file'][0] )
-			@cgi.params['plugin_image_file'][0].rewind
-			if extension =~ /\A(#{image_ext})\z/i
-				begin
-	         	size = @cgi.params['plugin_image_file'][0].size
-				rescue NameError
-	         	size = @cgi.params['plugin_image_file'][0].stat.size
+			@cgi.params['plugin_image_file'].each do |file|
+				filename = file.original_filename
+				extension, = image_info( file )
+				file.rewind
+				
+				if extension =~ /\A(#{image_ext})\z/i
+					begin
+						size = file.size
+					rescue NameError
+						size = file.stat.size
+					end
+					if @conf.secure then
+						raise image_error_num( maxnum ) if images.compact.length >= maxnum
+						raise image_error_size( maxsize ) if size > maxsize
+					end
+					output = "#{@image_dir}/#{date}_#{images.length}.#{extension}".untaint
+					File::umask( 022 )
+					File::open( output, "wb" ) do |f|
+						f.print file.read
+					end
+					images << File::basename( output ) # for secure mode
 				end
-				if @conf.secure then
-					raise image_error_num( maxnum ) if images.compact.length >= maxnum
-					raise image_error_size( maxsize ) if size > maxsize
-				end
-	         file = "#{@image_dir}/#{date}_#{images.length}.#{extension}".untaint
-		      File::umask( 022 )
-		      File::open( file, "wb" ) do |f|
-					f.print @cgi.params['plugin_image_file'][0].read
-		      end
-	         images << File::basename( file ) # for secure mode
-	      end
+			end
 	   elsif @cgi.params['plugin_image_delimage'][0]
 	      @cgi.params['plugin_image_id'].each do |id|
 	         file = "#{@image_dir}/#{images[id.to_i]}".untaint
@@ -241,53 +212,18 @@ if /^formplugin$/ =~ @mode then
 	end
 end
 
-add_header_proc do
-	%Q[\t<script type="text/javascript"><!--
-	var elem=null
-	function insertImage(val){
-		elem.value+=val
-	}
-	window.onload=function(){
-		for(var i=0;i<document.forms.length;i++){
-			for(var j=0;j<document.forms[i].elements.length;j++){
-				var e=document.forms[i].elements[j]
-				if(e.type&&e.type=="textarea"){
-					if(elem==null){
-						elem=e
-					}
-					e.onfocus=new Function("elem=this")
-				}
-			}
-		}
-	}
-	//-->
-	</script>
-	]
-end
-
 add_form_proc do |date|
 	r = ''
 	tabidx = 1200
 	images = image_list( date.strftime( '%Y%m%d' ) )
 	if images.length > 0 then
-		case @conf.style.sub( /^blog/i, '' )
-                when /^wiki|markdown$/i
-			ptag1 = "{{"
-			ptag2 = "}}"
-		when /^rd$/i
-			ptag1 = "((%"
-			ptag2 = "%))"
-		else
-			ptag1 = "&lt;%="
-			ptag2 = "%&gt;"
-		end
 	   r << %Q[<div class="form">
 		<div class="caption">
 		#{image_label_list_caption}
 		</div>
-		<form class="update" method="post" action="#{h @update}"><div>
+		<form id="plugin-image-delimage" class="update" method="post" action="#{h @update}"><div>
 		#{csrf_protection}
-		<table>
+		<table id="image-table">
 		<tr>]
 		tmp = ''
 	   images.each_with_index do |img,id|
@@ -295,22 +231,20 @@ add_form_proc do |date|
 			if @conf.secure then
 				img_type, img_w, img_h = 'jpg', nil, nil
 			else
-				img_type, img_w, img_h = open(File.join(@image_dir,img).untaint, 'r') {|f| image_info(f)}
+				img_type, img_w, img_h = open(File.join(@image_dir,img).untaint, 'rb') {|f| image_info(f)}
 			end
-			r << %Q[<td><img class="form" src="#{h @image_url}/#{h img}" alt="#{h id}" width="#{h( (img_w && img_w > 160) ? 160 : (img_w ? img_w : 160) )}"></td>]
-			ptag = "#{ptag1}image #{id}, '#{image_label_description}', nil, #{img_w && img_h ? '['+img_w.to_s+','+img_h.to_s+']' : 'nil'}#{ptag2}"
+			r << %Q[<td><img id="image-index-#{id}" class="image-img form" src="#{h @image_url}/#{h img}" alt="#{id}" width="#{h( (img_w && img_w > 160) ? 160 : (img_w ? img_w : 160) )}"></td>]
 			if @conf.secure then
 				img_info = ''
 			else
 				img_info = "#{File.size(File.join(@image_dir,img).untaint).to_s.reverse.gsub( /\d{3}/, '\0,' ).sub( /,$/, '' ).reverse} bytes"
 			end
-			if img_type && img_w && img_h
-				img_info << "<br>#{img_w} x #{img_h} (#{img_type})"
+			img_info = ''
+			if img_w && img_h
+				img_info << %Q|<span class="image-width">#{img_w}</span> x <span class="image-height">#{img_h}</span>|
 			end
-			tmp << %Q[<td>
-			#{img_info}<br>
-			<input type="checkbox" tabindex="#{tabidx+id*2}" name="plugin_image_id" value="#{h id}">#{id}
-			<input type="button" tabindex="#{tabidx+id*2+1}" onclick="insertImage(&quot;#{ptag}&quot;)" value="#{image_label_add_plugin}">
+			tmp << %Q[<td id="image-info-#{id}">
+			<input type="checkbox" tabindex="#{tabidx+id*2}" name="plugin_image_id" value="#{id}">&nbsp;#{img_info}
 			</td>]
 	   end
 		r << "</tr><tr>"
@@ -324,7 +258,7 @@ add_form_proc do |date|
 		</div>]
 	end
 
-   r << %Q[<div class="form">
+   r << %Q[<div id="plugin-image-addimage" class="form">
 	<div class="caption">
 	#{image_label_add_caption}
 	</div>]
@@ -336,7 +270,7 @@ add_form_proc do |date|
 	#{csrf_protection}
    <input type="hidden" name="plugin_image_addimage" value="true">
    <input type="hidden" name="date" value="#{date.strftime( '%Y%m%d' )}">
-   <input type="file" tabindex="#{tabidx+98}" name="plugin_image_file" size="50">
+   <input type="file" tabindex="#{tabidx+98}" name="plugin_image_file" size="50" multiple="multiple">
    <input type="submit" tabindex="#{tabidx+99}" name="plugin" value="#{h image_label_add_image}">
    </div></form>
 	</div>]

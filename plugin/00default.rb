@@ -353,14 +353,22 @@ def description_tag
 end
 
 def jquery_tag
-	%Q[<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.js" type="text/javascript"></script>]
+	%Q[<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js" type="text/javascript"></script>]
 end
 
 enable_js( '00default.js' )
+add_js_setting( '$tDiary.style', "'#{@conf.style.downcase.sub( /\Ablog/, '' )}'" )
+
+def script_tag_query_string
+	"?#{TDIARY_VERSION}#{Time::now.strftime('%Y%m%d')}"
+end
+
+def js_url; 'js'; end
 
 def script_tag
+	query = script_tag_query_string
 	html = @javascripts.sort.map {|script|
-		%Q|<script src="js/#{script}" type="text/javascript"></script>|
+		%Q|<script src="#{js_url}/#{script}#{query}" type="text/javascript"></script>|
 	}.join( "\n\t" )
 	html << "\n" << <<-HEAD
 		<script type="text/javascript"><!--
@@ -499,7 +507,7 @@ def subtitle_link( date, index, subtitle )
 			r << "<a "
 			r << %Q[name="p#{'%02d' % index}" ] if @anchor_name
 			param = "#{date.strftime( '%Y%m%d' )}#p#{'%02d' % index}"
-			titleattr = (not subtitle or subtitle.empty?) ? '' : %Q[ title="#{remove_tag( subtitle ).gsub( /"/, "&quot;" )}"]
+			titleattr = (not subtitle or subtitle.empty?) ? '' : %Q[ title="#{remove_tag( apply_plugin subtitle ).gsub( /"/, "&quot;" )}"]
 			r << %Q[href="#{h @index}#{anchor param}"#{titleattr}>#{@conf.section_anchor}</a> ]
 		end
 
@@ -746,6 +754,10 @@ def brl; '<br clear="left">';  end
 # preferences (saving methods)
 #
 
+if @mode =~ /conf|saveconf/
+	enable_js( '01conf.js' )
+end
+
 # basic (default)
 def saveconf_default
 	if @mode == 'saveconf' then
@@ -765,8 +777,8 @@ end
 # header/footer (header)
 def saveconf_header
 	if @mode == 'saveconf' then
-		@conf.header = @conf.to_native( @cgi.params['header'][0] ).gsub( /\r\n/, "\n" ).gsub( /\r/, '' ).sub( /\n+\z/, '' )
-		@conf.footer = @conf.to_native( @cgi.params['footer'][0] ).gsub( /\r\n/, "\n" ).gsub( /\r/, '' ).sub( /\n+\z/, '' )
+		@conf.header = @conf.to_native( @cgi.params['header'][0] ).lines.map{|s| s.chomp}.join( "\n" ).sub( /\n+\z/, '' )
+		@conf.footer = @conf.to_native( @cgi.params['footer'][0] ).lines.map{|s| s.chomp}.join( "\n" ).sub( /\n+\z/, '' )
 	end
 end
 

@@ -9,7 +9,7 @@
 # for Ruby1.9.1
 
 # Auto convert ASCII_8BIT pstore data (created by Ruby-1.8) to UTF-8.
-if "".respond_to?('force_encoding')
+if ::String.method_defined?(:force_encoding)
 	require 'pstore'
 	class PStoreRuby18Exception < Exception; end
 
@@ -59,47 +59,37 @@ class CGI
 	ENV = ::ENV.to_hash
 end
 
-# for Ruby1.8.X
-
-unless "".respond_to?('force_encoding')
-	class Encoding
-		class CompatibilityError < Exception; end
-
-		def Encoding.const_missing(id)
-			self
-		end
-	end
-
+# for Ruby 1.8.X
+unless ::String.method_defined?(:force_encoding)
 	class String
 		def force_encoding(encoding)
-			self
-		end
-
-		def encode(encoding)
 			self
 		end
 	end
 end
 
-unless "".respond_to?('lines')
+# for Ruby 1.8.6
+unless ::String.method_defined?(:lines)
 	class String
 		alias_method :lines, :to_a
 	end
 end
 
-unless "".respond_to?('bytesize')
+unless ::String.method_defined?(:bytesize)
 	class String
 		alias bytesize size
 	end
 end
 
-unless "".respond_to?('ord')
+unless ::String.method_defined?(:ord)
 	class String
 		def ord
 			self[0]
 		end
 	end
-	
+end
+
+unless ::Integer.method_defined?(:ord)
 	class Integer
 		def ord
 			self
@@ -124,6 +114,13 @@ module TDiary
 		end
 	end
 end
+
+class Object
+       def taint
+               super
+               untrust
+       end
+end if ::Object.method_defined?(:untrust)
 
 # Local Variables:
 # mode: ruby

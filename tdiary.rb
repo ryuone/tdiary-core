@@ -7,7 +7,7 @@ Copyright (C) 2001-2011, TADA Tadashi <t@tdtds.jp>
 You can redistribute it and/or modify it under GPL2.
 =end
 
-TDIARY_VERSION = '3.0.2.20110612'
+TDIARY_VERSION = '3.1.0.20110908'
 
 $:.unshift File.join(File::dirname(__FILE__), '/misc/lib').untaint
 Dir["#{File::dirname(__FILE__) + '/vendor/*/lib'}"].each {|dir| $:.unshift dir.untaint }
@@ -16,6 +16,7 @@ require 'cgi'
 require 'uri'
 require 'logger'
 require 'pstore'
+require 'json'
 begin
 	require 'erb_fast'
 rescue LoadError
@@ -30,12 +31,15 @@ require 'tdiary/core_ext'
 module TDiary
 	PATH = File::dirname( __FILE__ ).untaint
 
-	autoload :Config,         'tdiary/config'
-	autoload :Plugin,         'tdiary/plugin'
-	autoload :Comment,        'tdiary/comment'
-	autoload :CommentManager, 'tdiary/comment_manager'
-	autoload :RefererManager, 'tdiary/referer_manager'
-	autoload :Filter,         'tdiary/filter'
+	autoload :Config,           'tdiary/config'
+	autoload :Plugin,           'tdiary/plugin'
+	autoload :Comment,          'tdiary/comment'
+	autoload :CommentManager,   'tdiary/comment_manager'
+	autoload :RefererManager,   'tdiary/referer_manager'
+	autoload :Filter,           'tdiary/filter'
+	autoload :Dispatcher,       'tdiary/dispatcher'
+	autoload :Request,          'tdiary/request'
+	autoload :Response,         'tdiary/response'
 
 	#
 	# module DiaryBase
@@ -217,9 +221,11 @@ module TDiary
 				}.join
 				begin
 					r = ERB::new( rhtml.untaint ).result( binding )
-				rescue Encoding::CompatibilityError
-					# migration error on ruby 1.9 only 1st time, reload.
-					raise ForceRedirect::new( @conf.base_url )
+				rescue => e
+					if defined?(::Encoding) && e.class == ::Encoding::CompatibilityError
+						# migration error on ruby 1.9 only 1st time, reload.
+						raise ForceRedirect::new( @conf.base_url )
+					end
 				end
 				r = ERB::new( r ).src
 				store_cache( r, prefix ) unless @diaries.empty?
@@ -547,8 +553,14 @@ EOS
 		def initialize( cgi, rhtm, conf )
 			super
 
-			@title = @conf.to_native( @cgi.params['title'][0] )
-			@body = @conf.to_native( @cgi.params['body'][0] )
+			@title = @cgi.params['title'][0]
+			@body = @cgi.params['body'][0]
+			if @conf.mobile_agent? && String.method_defined?(:encode)
+				@title.force_encoding(@conf.mobile_encoding)
+				@body.force_encoding(@conf.mobile_encoding)
+			end
+			@title = @conf.to_native( @title )
+			@body = @conf.to_native( @body )
 			@old_date = @cgi.params['old'][0]
 			@hide = @cgi.params['hide'][0] == 'true' ? true : false
 
@@ -581,8 +593,14 @@ EOS
 	#
 	class TDiaryUpdate < TDiaryAdmin
 		def initialize( cgi, rhtml, conf )
-			@title = conf.to_native( cgi.params['title'][0] )
-			@body = conf.to_native( cgi.params['body'][0] )
+			@title = cgi.params['title'][0]
+			@body = cgi.params['body'][0]
+			if conf.mobile_agent? && String.method_defined?(:encode)
+				@title.force_encoding(conf.mobile_encoding)
+				@body.force_encoding(conf.mobile_encoding)
+			end
+			@title = conf.to_native( @title )
+			@body = conf.to_native( @body )
 			@hide = cgi.params['hide'][0] == 'true' ? true : false
 			super
 		end
@@ -907,9 +925,15 @@ EOS
 	protected
 		def load( date )
 			@date = date
-			@name = @conf.to_native( @cgi.params['name'][0] )
+			@name = @cgi.params['name'][0]
 			@mail = @cgi.params['mail'][0]
-			@body = @conf.to_native( @cgi.params['body'][0] )
+			@body = @cgi.params['body'][0]
+			if @conf.mobile_agent? && String.method_defined?(:encode)
+				@name.force_encoding(conf.mobile_encoding)
+				@body.force_encoding(conf.mobile_encoding)
+			end
+			@name = @conf.to_native( @name )
+			@body = @conf.to_native( @body )
 			@comment = Comment::new( @name, @mail, @body )
 
 			dirty = DIRTY_NONE

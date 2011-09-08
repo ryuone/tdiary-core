@@ -3,7 +3,6 @@
 require File.expand_path('../tdiary/environment', __FILE__)
 require 'rake'
 require 'rake/clean'
-require 'rake/testtask'
 require 'rspec/core/rake_task'
 
 CLEAN.include(
@@ -30,6 +29,20 @@ namespace :spec do
 		desc "Run the code examples in spec/#{dir}"
 		RSpec::Core::RakeTask.new(dir.to_sym) do |t|
 			t.pattern = "spec/#{dir}/**/*_spec.rb"
+		end
+	end
+
+	namespace :acceptance do
+		desc 'Run the code examples in spec/acceptance with cgi mode'
+		task :cgi do
+			ENV['TEST_MODE'] = 'webrick'
+			Rake::Task["spec:acceptance"].invoke
+		end
+
+		desc 'Run the code examples in spec/acceptance with secure mode'
+		task :secure do
+			ENV['TEST_MODE'] = 'secure'
+			Rake::Task["spec:acceptance"].invoke
 		end
 	end
 

@@ -4,21 +4,24 @@ require 'acceptance_helper'
 feature 'spamフィルタ設定の利用' do
 	scenario 'おすすめフィルタの内容が保存される'
 
-	scenario 'CSRF情報が保存される'
+	scenario 'CSRF対策の設定が保存される' do
+		visit '/update.rb?conf=csrf_protection'
+
+		choose 'check_key'
+		click_button 'OK'
+
+		visit '/update.rb?conf=csrf_protection'
+		page.should have_selector 'input[name="check_key"][value="true"][checked]'
+	end
 
 	scenario 'spamと判定されたツッコミを捨てる'
 
 	scenario 'URLの数によるspam判定' do
 		append_default_diary
 
-		visit '/'
-		click_link '追記'
-		click_link '設定'
-		click_link 'spamフィルタ'
+		visit '/update.rb?conf=spamfilter'
 		fill_in "spamfilter.max_uris", :with => 1
-
 		click_button 'OK'
-		within('title') { page.should have_content('(設定完了)') }
 
 		visit "/"
 		click_link 'ツッコミを入れる'
@@ -49,10 +52,7 @@ BODY
 	scenario 'URLの割合によるspam判定' do
 		append_default_diary
 
-		visit '/'
-		click_link '追記'
-		click_link '設定'
-		click_link 'spamフィルタ'
+		visit '/update.rb?conf=spamfilter'
 		fill_in "spamfilter.max_rate", :with => 50
 
 		click_button 'OK'
@@ -89,10 +89,7 @@ BODY
 	scenario 'キーワードでツッコミがはじかれる' do
 		append_default_diary
 
-		visit '/'
-		click_link '追記'
-		click_link '設定'
-		click_link 'spamフィルタ'
+		visit '/update.rb?conf=spamfilter'
 		fill_in "spamfilter.bad_comment_patts", :with => <<-BODY
 こんにちは!
 BODY
@@ -115,15 +112,11 @@ BODY
 	scenario 'メールアドレスでツッコミがはじかれる' do
 		append_default_diary
 
-		visit '/'
-		click_link '追記'
-		click_link '設定'
-		click_link 'spamフィルタ'
+		visit '/update.rb?conf=spamfilter'
 		fill_in "spamfilter.bad_mail_patts", :with => <<-BODY
 example.com
 BODY
 		click_button 'OK'
-		within('title') { page.should have_content('(設定完了)') }
 
 		visit "/"
 		click_link 'ツッコミを入れる'
@@ -154,15 +147,11 @@ BODY
 	scenario 'URLでツッコミがはじかれる' do
 		append_default_diary
 
-		visit '/'
-		click_link '追記'
-		click_link '設定'
-		click_link 'spamフィルタ'
+		visit '/update.rb?conf=spamfilter'
 		fill_in "spamfilter.bad_uri_patts", :with => <<-BODY
 example
 BODY
 		click_button 'OK'
-		within('title') { page.should have_content('(設定完了)') }
 
 		visit "/"
 		click_link 'ツッコミを入れる'
@@ -189,8 +178,44 @@ BODY
 
 	scenario 'IPアドレスでツッコミが弾かれる'
 
-	scenario 'ツッコミの注意文が保存されて表示される'
+	scenario 'ツッコミの注意文が保存されて表示される' do
+		append_default_diary
 
-	scenario 'スパムフィルター選択が保存される'
+		visit '/update.rb?conf=spamfilter'
+		fill_in 'comment_description', :with => 'これはツッコミの注意文です'
+		click_button 'OK'
 
+		visit "/"
+		click_link 'ツッコミを入れる'
+		page.should have_content 'これはツッコミの注意文です'
+	end
+
+	scenario 'スパムフィルターのログ記録の設定ができない', :secure => true do
+		append_default_diary
+
+		visit '/update.rb?conf=spamfilter'
+		page.should_not have_field 'filter.debug_mode'
+	end
+
+	scenario 'スパムフィルターのログ記録の設定が保存される', :rack => true do
+		append_default_diary
+
+		visit '/update.rb?conf=spamfilter'
+		page.should have_field 'filter.debug_mode'
+		select '記録しない', :from => 'filter.debug_mode'
+		click_button 'OK'
+
+		visit '/update.rb?conf=spamfilter'
+		within('select[name="filter.debug_mode"] option[selected]'){
+			page.should have_content '記録しない'
+		}
+	end
 end
+
+# Local Variables:
+# mode: ruby
+# indent-tabs-mode: t
+# tab-width: 3
+# ruby-indent-level: 3
+# End:
+# vim: ts=3
