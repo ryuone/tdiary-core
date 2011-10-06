@@ -1,3 +1,21 @@
+2011-10-04  Kazuhiko  <kazuhiko@fdiary.net>
+	* tdiary/config.rb: preload more transcodes that can be used in kw.rb plugin or sending a notification email.
+
+	* misc/plugin/kw.rb: use the default key if the key is missing. use Shift_JIS instead of sjis as the encoding name. load NKF library out of method definitions.
+
+2011-09-26  Kazuhiko  <kazuhiko@fdiary.net>
+	* update.fcgi: initial commit.
+	* index.fcgi, misc/lib/fcgi_patch.rb: monkey patching FCGI::each_cgi so that we can accept both UTF-8 input and Shift_JIS input.
+
+2011-09-14  SHIBATA Hiroshi  <shibata.hiroshi@gmail.com>
+	* tdiary/config.rb: do not encode when string is already utf-8 encoding.
+
+2011-09-13  Kazuhiko  <kazuhiko@fdiary.net>
+	* tdiary/config.rb (to_native): fix a typo that may cause NoMethodError, pointed out by hsbt.
+
+2011-09-12  Kazuhiko  <kazuhiko@fdiary.net>
+	* tdiary/config.rb (to_native): fix a mistake in 631e228 that may cause nil return value.
+
 2011-09-08  Kazuhiko  <kazuhiko@fdiary.net>
 	* tdiary/lang/ja.rb, tdiary/lang/zh.rb: replace invalid or undefined characters in String#encode to avoid exceptions.
 

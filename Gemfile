@@ -1,11 +1,12 @@
 source :rubygems
 
 gem 'rack'
-gem 'rake'
+gem 'rake', '0.9.2'
 
 group :development do
   gem 'thin', :platforms => :ruby
-  gem 'capistrano'
+  gem 'capistrano', :require => false
+  gem 'capistrano_colors', :require => false
   gem 'pit'
 end
 

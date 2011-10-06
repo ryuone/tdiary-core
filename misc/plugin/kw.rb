@@ -30,7 +30,9 @@
 # You can distribute this under GPL.
 #
 
-require "nkf"
+unless String.method_defined?(:encode)
+	require 'nkf'
+end
 
 def kw_parse( str )
 	kw_list = []
@@ -71,8 +73,17 @@ def kw( keyword, name = nil, title = nil )
 	keyword = key unless show_inter
 	name = keyword unless name
 	title = title ? %Q[ title="#{h title}"] : ''
-	begin
-		key = u( case @kw_dic[inter][1]
+
+	unless @kw_dic.has_key?(inter)
+		inter = nil
+	end
+	style = @kw_dic[inter][1]
+	if String.method_defined?(:encode)
+		if style
+			key = key.encode({'jis'=>'ISO-2022-JP', 'sjis'=>'Shift_JIS'}[style] || style)
+		end
+	else
+		key = case style
 			when 'euc-jp'
 				NKF::nkf( '-m0 -W -e', key )
 			when 'sjis'
@@ -83,12 +94,9 @@ def kw( keyword, name = nil, title = nil )
 				key
 			else # none
 				key
-		end )
-	rescue NameError
-		inter = nil
-		retry
+		end
 	end
-	%Q[<a href="#{h @kw_dic[inter][0].sub( /\$1/, key )}"#{title}>#{h name}</a>]
+	%Q[<a href="#{h @kw_dic[inter][0].sub( /\$1/, u( key ))}"#{title}>#{h name}</a>]
 end
 
 #
@@ -133,7 +141,6 @@ add_conf_proc( 'kw', kw_label ) do
 	<p><textarea name="kw.dic" cols="60" rows="10">#{h dic.collect{|a|a.flatten.join( " " )}.join( "\n" )}</textarea></p>
 	HTML
 end
-
 
 # Local Variables:
 # mode: ruby

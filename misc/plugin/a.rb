@@ -35,7 +35,6 @@
 # Copyright (c) 2002-2004 MUTOH Masao <mutoh@highway.ne.jp>
 # You can redistribute it and/or modify it under GPL2.
 #
-require 'nkf'
 
 # Resources
 unless @resource_loaded then
@@ -95,7 +94,12 @@ def a_convert_charset(option, charset)
 	return "" unless option
 	return option unless charset
 	if charset =~ A_REG_CHARSET2
-		ret = NKF::nkf("-#{charset[0].chr}", option)
+		ret = if String.method_defined?(:encode)
+					option.encode(charset == 'jis' ? 'ISO-2022-JP' : charset)
+				else
+					require 'nkf'
+					NKF::nkf("-#{charset[0].chr}", option)
+				end
 	else
 		ret = option
 	end

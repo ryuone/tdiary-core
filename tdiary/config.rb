@@ -82,7 +82,9 @@ module TDiary
 			# preload transcodes outside $SAFE=4 environment, that is a workaround
 			# for the possible SecurityError. see the following uri for the detail.
 			# http://redmine.ruby-lang.org/issues/5279
-			''.encode('utf-16be')
+			%w(utf-16be euc-jp iso-2022-jp Shift_JIS).each do |enc|
+				"\uFEFF".encode(enc) rescue nil
+			end
 
 			def to_native( str, charset = nil )
 				str = str.dup
@@ -90,15 +92,20 @@ module TDiary
 					str.force_encoding(charset || 'utf-8')
 				end
 				unless str.valid_encoding?
-					str str.encode!('utf-16be', {:invalid => :replace, :undef => :replace})
+					str.encode!('utf-16be', {:invalid => :replace, :undef => :replace})
 				end
-				str.encode!('utf-8', {:invalid => :replace, :undef => :replace})
+				unless str.encoding == Encoding::UTF_8
+					str.encode!('utf-8', {:invalid => :replace, :undef => :replace})
+				end
+				str
 			end
 		else
-			require 'nkf'
+			require 'kconv'
 			require 'iconv'
+			require 'nkf'
 
 			def to_native( str, charset = nil )
+				return str if Kconv.isutf8(str)
 				begin
 					Iconv.conv('utf-8', charset || 'utf-8', str)
 				rescue
@@ -112,8 +119,8 @@ module TDiary
 						else
 							''
 					end
+					NKF::nkf("-m0 -#{from}w", str)
 				end
-				NKF::nkf("-m0 -#{from}w", str)
 			end
 		end
 
@@ -123,10 +130,7 @@ module TDiary
 			@secure = true unless @secure
 			@options = {}
 
-			conf_path = "#{File.expand_path(File.dirname($PROGRAM_NAME))}/tdiary.conf"
-			conf_path = "#{TDiary::PATH}/tdiary.conf" unless File.exists?(conf_path)
-
-			eval( File::open( conf_path ) {|f| f.read }.untaint, b, "(tdiary.conf)", 1 )
+			eval( File::open( 'tdiary.conf' ) {|f| f.read }.untaint, b, "(tdiary.conf)", 1 )
 
 			# language setup
 			@lang = 'ja' unless @lang
@@ -228,8 +232,6 @@ module TDiary
 						enc = case @lang
 							when 'en'
 								'UTF-8'
-							when 'zh'
-								'Big5'
 							else
 								'EUC-JP'
 							end
