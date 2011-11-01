@@ -15,21 +15,27 @@ require 'rexml/document'
 @amazon_require_version = '2007-01-17'
 
 @amazon_url_hash = {
-  'us' => 'http://www.amazon.com/exec/obidos/ASIN',
-  'jp' => 'http://www.amazon.co.jp/exec/obidos/ASIN',
-  'fr' => 'http://www.amazon.fr/exec/obidos/ASIN',
-  'uk' => 'http://www.amazon.co.uk/exec/obidos/ASIN',
-  'de' => 'http://www.amazon.de/exec/obidos/ASIN',
   'ca' => 'http://www.amazon.ca/exec/obidos/ASIN',
+  'cn' => 'http://www.amazon.cn/exec/obidos/ASIN',
+  'de' => 'http://www.amazon.de/exec/obidos/ASIN',
+  'es' => 'http://www.amazon.es/exec/obidos/ASIN',
+  'fr' => 'http://www.amazon.fr/exec/obidos/ASIN',
+  'it' => 'http://www.amazon.it/exec/obidos/ASIN',
+  'jp' => 'http://www.amazon.co.jp/exec/obidos/ASIN',
+  'uk' => 'http://www.amazon.co.uk/exec/obidos/ASIN',
+  'us' => 'http://www.amazon.com/exec/obidos/ASIN',
 }
 
 @amazon_ecs_url_hash = {
-  'us' => 'http://rpaproxy.tdiary.org/rpaproxy/us/',
-  'jp' => 'http://rpaproxy.tdiary.org/rpaproxy/jp/',
-  'fr' => 'http://rpaproxy.tdiary.org/rpaproxy/fr/',
-  'uk' => 'http://rpaproxy.tdiary.org/rpaproxy/uk/',
-  'de' => 'http://rpaproxy.tdiary.org/rpaproxy/de/',
   'ca' => 'http://rpaproxy.tdiary.org/rpaproxy/ca/',
+  'cn' => 'http://rpaproxy.tdiary.org/rpaproxy/cn/',
+  'de' => 'http://rpaproxy.tdiary.org/rpaproxy/de/',
+  'es' => 'http://rpaproxy.tdiary.org/rpaproxy/es/',
+  'fr' => 'http://rpaproxy.tdiary.org/rpaproxy/fr/',
+  'it' => 'http://rpaproxy.tdiary.org/rpaproxy/it/',
+  'jp' => 'http://rpaproxy.tdiary.org/rpaproxy/jp/',
+  'uk' => 'http://rpaproxy.tdiary.org/rpaproxy/uk/',
+  'us' => 'http://rpaproxy.tdiary.org/rpaproxy/us/',
 }
 
 if @conf['amazon.bitly'] and @conf['bitly.login'] and @conf['bitly.key'] then
@@ -55,14 +61,14 @@ def amazon_fetch( url, limit = 10 )
 	end
 end
 
-def amazon_call_ecs( asin, id_type, country = nil )
-	aid =  @conf['amazon.aid'] || ''
-	aid = 'cshs-22' if aid.empty?
+def amazon_call_ecs( asin, id_type, country )
+	@conf["amazon.aid.#{@amazon_default_country}"] = @conf['amazon.aid'] unless @conf['amazon.aid'].empty?
+	aid = @conf["amazon.aid.#{country}"] || ''
 
 	url = (@conf['amazon.endpoints'] || @amazon_ecs_url_hash)[country].dup
 	url << "?Service=AWSECommerceService"
 	url << "&SubscriptionId=#{@amazon_subscription_id}"
-	url << "&AssociateTag=#{aid}"
+	url << "&AssociateTag=#{aid}" unless aid.empty?
 	url << "&Operation=ItemLookup"
 	url << "&ItemId=#{asin}"
 	url << "&IdType=#{id_type}"
@@ -208,7 +214,7 @@ def amazon_to_html( item, with_image = true, label = nil, pos = 'amazon' )
 	%Q|<a href="#{h url}">#{img}#{h label}</a>|
 end
 
-def amazon_secure_html( asin, with_image, label, pos = 'amazon', country = nil )
+def amazon_secure_html( asin, with_image, label, pos, country )
 	with_image = false if @mode == 'categoryview'
 	label = asin unless label
 
@@ -226,9 +232,11 @@ def amazon_secure_html( asin, with_image, label, pos = 'amazon', country = nil )
 		label = ''
 	end
 
+	@conf["amazon.aid.#{@amazon_default_country}"] = @conf['amazon.aid'] unless @conf['amazon.aid'].empty?
+	aid = @conf["amazon.aid.#{country}"] || ''
 	amazon_url = @amazon_url_hash[country]
 	url =  "#{amazon_url}/#{u asin}"
-	url << "/#{u @conf['amazon.aid']}" if @conf['amazon.aid'] and @conf['amazon.aid'].length > 0
+	url << "/#{u aid}" unless aid.empty?
 	url << "/ref=nosim/"
 	%Q|<a href="#{h url}">#{image}#{h label}</a>|
 end
