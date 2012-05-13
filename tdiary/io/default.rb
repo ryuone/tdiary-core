@@ -12,24 +12,6 @@ module TDiary
 	TDIARY_MAGIC_MINOR = '01.00'
 	TDIARY_MAGIC = "#{TDIARY_MAGIC_MAJOR}.#{TDIARY_MAGIC_MINOR}"
 
-	def TDiary::parse_tdiary( data )
-		header, body = data.split( /\r?\n\r?\n/, 2 )
-		headers = {}
-		if header then
-			header.lines.each do |l|
-				l.chomp!
-				key, val = l.scan( /([^:]*):\s*(.*)/ )[0]
-				headers[key] = val ? val.chomp : nil
-			end
-		end
-		if body then
-			body.gsub!( /^\./, '' )
-		else
-			body = ''
-		end
-		[headers, body]
-	end
-
 	module CommentIO
 		def comment_file( data_path, date )
 			date.strftime( "#{data_path}%Y/%Y%m.tdc" )
@@ -49,7 +31,7 @@ module TDiary
 					s = fh.read
 					s = migrate_to_01( s ) if minor == '00.00' and !@tdiary.conf['stop_migrate_01']
 					s.split( /\r?\n\.\r?\n/ ).each do |l|
-						headers, body = TDiary::parse_tdiary( l )
+						headers, body = DefaultIO.parse_tdiary( l )
 						next unless body
 						comment = Comment::new(
 								headers['Name'],
@@ -97,7 +79,7 @@ module TDiary
 				File::open( file ) do |fh|
 					fh.flock( File::LOCK_SH )
 					fh.read.split( /\r?\n\.\r?\n/ ).each do |l|
-						headers, body = TDiary::parse_tdiary( l )
+						headers, body = DefaultIO.parse_tdiary( l )
 						next unless body
 						body.each do |r|
 							count, ref = r.chomp.split( / /, 2 )
@@ -137,11 +119,48 @@ module TDiary
 	class DefaultIO < BaseIO
 		include CommentIO
 		include RefererIO
+		include CacheIO
 
 		def initialize( tdiary )
 			@tdiary = tdiary
 			@data_path = @tdiary.conf.data_path
 			load_styles
+		end
+
+		class << self
+			def parse_tdiary( data )
+				header, body = data.split( /\r?\n\r?\n/, 2 )
+				headers = {}
+				if header then
+					header.lines.each do |l|
+						l.chomp!
+						key, val = l.scan( /([^:]*):\s*(.*)/ )[0]
+						headers[key] = val ? val.chomp : nil
+					end
+				end
+				if body then
+					body.gsub!( /^\./, '' )
+				else
+					body = ''
+				end
+				[headers, body]
+			end
+
+			def load_cgi_conf(conf)
+				conf.class.class_eval { attr_accessor :data_path }
+				raise TDiaryError, 'No @data_path variable.' unless conf.data_path
+
+				conf.data_path += '/' if /\/$/ !~ conf.data_path
+				raise TDiaryError, 'Do not set @data_path as same as tDiary system directory.' if conf.data_path == "#{TDiary::PATH}/"
+
+				File::open( "#{conf.data_path.untaint}tdiary.conf" ){|f| f.read }
+			rescue IOError, Errno::ENOENT
+			end
+
+			def save_cgi_conf(conf, result)
+				File::open( "#{conf.data_path.untaint}tdiary.conf", 'w' ) {|o| o.print result }
+			rescue IOError, Errno::ENOENT
+			end
 		end
 
 		#
@@ -162,7 +181,7 @@ module TDiary
 				end
 				fh.flock( File::LOCK_EX )
 
-				cache = @tdiary.restore_parser_cache( date, 'default' )
+				cache = restore_parser_cache( date, 'default' )
 				force_save = TDiaryBase::DIRTY_NONE
 				unless cache then
 					force_save |= restore( fh, diaries )
@@ -176,7 +195,7 @@ module TDiary
 				store_comment( cfile, diaries ) if ((dirty | force_save) & TDiaryBase::DIRTY_COMMENT) != 0
 				store_referer( rfile, diaries ) if ((dirty | force_save) & TDiaryBase::DIRTY_REFERER) != 0
 				if dirty != TDiaryBase::DIRTY_NONE or not cache then
-					@tdiary.store_parser_cache( date, 'default', diaries )
+					store_parser_cache(date, diaries, 'default')
 				end
 
 				if diaries.empty?
@@ -189,7 +208,7 @@ module TDiary
 					rescue Errno::ENOENT
 					end
 					begin
-						@tdiary.store_parser_cache( date, nil, nil)
+						store_parser_cache(date, nil, nil)
 					rescue Errno::ENOENT
 					end
 				end
@@ -217,6 +236,19 @@ module TDiary
 			calendar
 		end
 
+		def cache_path
+			path = (@tdiary.conf.cache_path || "#{@data_path}cache").untaint
+
+			unless FileTest.directory?(path) then
+				begin
+					Dir.mkdir(path)
+				rescue Errno::EEXIST
+				end
+			end
+
+			path
+		end
+
 		def diary_factory( date, title, body, style = 'tDiary' )
 			styled_diary_factory( date, title, body, style )
 		end
@@ -236,7 +268,7 @@ module TDiary
 					s = fh.read
 					s = migrate_to_01( s ) if minor == '00.00' and !@tdiary.conf['stop_migrate_01']
 					s.split( /\r?\n\.\r?\n/ ).each do |l|
-						headers, body = TDiary::parse_tdiary( l )
+						headers, body = DefaultIO.parse_tdiary( l )
 						style_name = headers['Format'] || 'tDiary'
 						diary = style( style_name )::new( headers['Date'], headers['Title'], body, Time::at( headers['Last-Modified'].to_i ) )
 						diary.show( headers['Visible'] == 'true' ? true : false )

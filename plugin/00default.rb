@@ -353,17 +353,23 @@ def description_tag
 end
 
 def jquery_tag
-	%Q[<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js" type="text/javascript"></script>]
+	%Q[<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js" type="text/javascript"></script>]
 end
 
 enable_js( '00default.js' )
 add_js_setting( '$tDiary.style', "'#{@conf.style.downcase.sub( /\Ablog/, '' )}'" )
 
+if /^form|edit|preview|showcomment/ =~ @mode
+	enable_js( '02edit.js' )
+end
+
 def script_tag_query_string
 	"?#{TDIARY_VERSION}#{Time::now.strftime('%Y%m%d')}"
 end
 
-def js_url; 'js'; end
+def js_url
+	defined?(Rack) ? 'assets' : 'js'
+end
 
 def script_tag
 	query = script_tag_query_string
@@ -378,7 +384,9 @@ def script_tag
 	HEAD
 end
 
-def theme_url; 'theme'; end
+def theme_url
+	defined?(Rack) ? 'assets' : 'theme'
+end
 
 def css_tag
 	if @mode =~ /conf$/ then

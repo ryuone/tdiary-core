@@ -62,6 +62,7 @@ unless @resource_loaded then
 	def image_label_delete; 'チェックした画像の削除'; end
 	def image_label_only_jpeg; 'JPEGのみ'; end
 	def image_label_add_image; 'この画像をアップロードする'; end
+	def image_label_drop_here; 'ここにファイルをドロップ'; end
 end
 
 def image( id, alt = 'image', thumbnail = nil, size = nil, place = 'photo' )
@@ -76,7 +77,11 @@ def image( id, alt = 'image', thumbnail = nil, size = nil, place = 'photo' )
 		size = ''
 	elsif size
 		if size.kind_of?(Array)
-			size = %Q| width="#{h size[0]}" height="#{h size[1]}"|
+			if size.length > 1
+				size = %Q| width="#{h size[0]}" height="#{h size[1]}"|
+			elsif size.length > 0
+				size = %Q| width="#{h size[0]}"|
+			end
 		else
 			size = %Q| width="#{size.to_i}"|
 		end
@@ -164,6 +169,7 @@ if /^(form|edit|formplugin|showcomment)$/ =~ @mode then
 	enable_js( 'image.js' )
 	add_js_setting( '$tDiary.plugin.image' )
 	add_js_setting( '$tDiary.plugin.image.alt', %Q|'#{image_label_description}'| )
+	add_js_setting( '$tDiary.plugin.image.drop_here', %Q|'#{image_label_drop_here}'| )
 	@image_list = image_list( @date.strftime( '%Y%m%d' ) ) if @conf.secure
 end
 
@@ -244,7 +250,7 @@ add_form_proc do |date|
 				img_info << %Q|<span class="image-width">#{img_w}</span> x <span class="image-height">#{img_h}</span>|
 			end
 			tmp << %Q[<td id="image-info-#{id}">
-			<input type="checkbox" tabindex="#{tabidx+id*2}" name="plugin_image_id" value="#{id}">&nbsp;#{img_info}
+			<label><input type="checkbox" tabindex="#{tabidx+id*2}" name="plugin_image_id" value="#{id}">&nbsp;#{img_info}</label>
 			</td>]
 	   end
 		r << "</tr><tr>"

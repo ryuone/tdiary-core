@@ -1,19 +1,28 @@
 $:.unshift( File::dirname( __FILE__ ).untaint )
 require 'tdiary/application'
+require 'tdiary/rack/html_anchor'
 
 use Rack::Reloader
-use Rack::Static, :urls => ["/theme"], :root => "."
-use Rack::Static, :urls => ["/js"], :root => "."
 
-map "/" do
-	run TDiary::Application.new(:index)
+base_dir = ''
+
+map "#{base_dir}/assets" do
+	environment = Sprockets::Environment.new
+	['js', 'theme', '../tdiary-contrib/js', '../tdiary-theme'].each do |path|
+		environment.append_path path
+	end
+	run environment
 end
 
-map "/index.rb" do
-	run TDiary::Application.new(:index)
+map "#{base_dir}/" do
+	use TDiary::Rack::HtmlAnchor
+	run Rack::Cascade.new([
+		Rack::File.new("./public/"),
+		TDiary::Application.new(:index)
+	])
 end
 
-map "/update.rb" do
+map "#{base_dir}/update.rb" do
 	use Rack::Auth::Basic do |user, pass|
 		if File.exist?('.htpasswd')
 			require 'webrick/httpauth/htpasswd'

@@ -3,11 +3,7 @@
 # class Plugin
 #  plugin management class
 #
-begin
-	require 'erb_fast'
-rescue LoadError
-	require 'erb'
-end
+require 'erb'
 
 module TDiary
 	class Plugin
@@ -305,7 +301,23 @@ module TDiary
 		end
 
 		def enable_js( script )
+			compile_js( script ) if defined? CoffeeScript
 			@javascripts << script unless @javascripts.index( script )
+		end
+
+		def compile_js( script )
+			path = script.sub(/\.js\z/, '')
+			js_path = "#{TDiary::PATH}/js/#{script}"
+			coffee_path = "#{TDiary::PATH}/js/#{path}.coffee"
+
+			return unless File.exist?(coffee_path)
+
+			if !File.exist?(js_path) || File.mtime(coffee_path) > File.mtime(js_path)
+				File.open("#{TDiary::PATH}/js/#{path}.js", 'w') do |js|
+					js.write CoffeeScript.compile(File.read("#{TDiary::PATH}/js/#{path}.coffee"))
+				end
+				@logger.info("compiled javascript: #{script}")
+			end
 		end
 
 		def add_js_setting( var, val = 'new Object()' )
