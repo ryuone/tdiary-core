@@ -1,3 +1,89 @@
+2012-04-29 TADA Tadashi <t@tdtds.jp>
+	* Release 3.1.3.
+
+2012-04-25 TADA Tadashi <t@tdtds.jp>
+	* title_tag.rb: a little modify of title tag.
+
+2012-04-17 TADA Tadashi <t@tdtds.jp>
+	* highlight.{js,rb}: set section title function back.
+
+2012-04-17  SHIBATA Hiroshi  <shibata.hiroshi@gmail.com>
+	* tdiary/io/heroku.rb: memoize cache_path for HerokuIO
+
+2012-04-14  SHIBATA Hiroshi  <shibata.hiroshi@gmail.com>
+	* vendor/{json_pure-1.6.6,rdtool-0.6.33}: update latest gem version.
+	* tdiary/io/{default,heroku}.rb, tdiary/io/cache/*: split cache mecanism from IO files.
+
+2012-03-28  SHIBATA Hiroshi  <shibata.hiroshi@gmail.com>
+	* tdiary.rb, tdiary/io/default.rb: separate cache methods, now File cache is implerement to DefaultIO class.
+	* tdiary/io/heroku.rb: implements to diary's cache using memcached.
+
+2012-03-27  hb <smallstyle@gmail.com>
+	* misc/plugin/image.rb, misc/plugin/en/image.rb, js/image.js: added Drag and Drop upload field. #40
+
+2012-03-23  SHIBATA Hiroshi  <shibata.hiroshi@gmail.com>
+	* tdiary.rb, tdiary/config.rb, tdiary/io/default.rb, plugin/*.rb:
+	move restore/store methods depending File I/O to DefaultIO.
+
+	* tdiary/io/heroku.rb, spec/fixtures/tdiary.conf.heroku: added HerokuIO. support running to www.heroku.com.
+
+2012-02-28  SHIBATA Hiroshi  <shibata.hiroshi@gmail.com>
+	* tdiary.rb: handled security error when tmp directory is nothing.
+	* misc/style/gfm/gfm_style.rb: support code highlighting with pygments.
+	* Rakefile, spec/spec_helper.rb: added ci_reporter.
+
+2012-02-25  SHIBATA Hiroshi  <shibata.hiroshi@gmail.com>
+	* tdiary/io/base.rb: fix initialize style.path.
+
+2012-02-23  SHIBATA Hiroshi  <shibata.hiroshi@gmail.com>
+	* tdiary/io/base.rb: support multiple directories for style file.
+	* theme/**/*.css: converted utf-8.
+	* plugin/00default.rb, js/02edit.{js,coffee}: auto expand textarea size.
+
+2012-02-19  SHIBATA Hiroshi  <shibata.hiroshi@gmail.com>
+	* misc/style/gfm/gfm_style.rb: fix plugin syntax error in gfm_style.
+
+2012-02-17  SHIBATA Hiroshi  <shibata.hiroshi@gmail.com>
+	* tdiary/io/base.rb, tdiary/*_style.rb: restructured style file path.
+	* misc/style/gfm/gfm_style.rb: added Github Flavored Markdown style.
+
+2012-01-10 TADA Tadashi <t@tdtds.jp>
+	* amazon.rb: changed required API version to 2011-08-01. #134
+
+2012-01-29 TADA Tadashi <t@tdtds.jp>
+	* Release 3.1.2.
+
+2012-01-22  SHIBATA Hiroshi  <shibata.hiroshi@gmail.com>
+	* misc/plugins/amazon.rb: more lazy loading.
+
+2012-01-14  SHIBATA Hiroshi  <shibata.hiroshi@gmail.com>
+	* misc/plugins/amazon.rb, misc/plugins/amazon/amazonimg.rb: use autoload when require REXML, because REXML loading was so heavy.
+
+2012-01-11 TADA Tadashi <t@tdtds.jp>
+	* plugin/title_tag.rb: fixed over escape in title element. #127
+
+2012-01-10 TADA Tadashi <t@tdtds.jp>
+	* fixed incorrect version number (2011->2012).
+
+2012-01-08  SHIBATA Hiroshi  <shibata.hiroshi@gmail.com>
+	* tdiary/plugin.rb, Rakefile: support CoffeeScript, enabled dynamic compile when running on Rack mode.
+
+2012-01-06 TADA Tadashi <t@tdtds.jp>
+	* plugin/amazon.rb: show an error message when API timeouted.
+
+2012-01-05 TADA Tadashi <t@tdtds.jp>
+	* filter/antispamservice.rb: discontinued using Net::HTTP.version_1_1.
+
+2011-12-13 TADA Tadashi <t@tdtds.jp>
+	* plugin/image.rb: set correct image size when size parameter has under 2 items. #119
+
+2011-11-03 TADA Tadashi <t@tdtds.jp>
+	* plugin/disp_referrer.rb: suppressed Encoding::CompatibilityError error.
+
+2011-11-02 TADA Tadashi <t@tdtds.jp>
+	* plugin/ping.rb: discontinued using Net::HTTP.version_1_1.
+	* plugin/weather.rb: discontinued using Net::HTTP.version_1_1.
+
 2011-10-30  SHIBATA Hiroshi  <shibata.hiroshi@gmail.com>
 
 	* tdiary/dispatcher/index_main.rb: bugfix http header when status is NOT_MODIFIED.

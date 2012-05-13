@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 =begin
 = 本日のリンク元もうちょっとだけ強化プラグイン((-$Id: disp_referrer.rb,v 1.70 2008-03-02 09:01:45 kazuhiko Exp $-))
 
@@ -342,8 +343,12 @@ class DispRef2String
 		def self::unescape( str )
 			if str then
 				# escape ruby 1.6 bug.
-				str.gsub( /\+/, ' ').gsub(/((?:%[0-9a-fA-F]{2})+)/n) do
-					[$1.delete('%')].pack('H*')
+				begin
+					str.gsub( /\+/, ' ').gsub(/((?:%[0-9a-fA-F]{2})+)/n) do
+						[$1.delete('%')].pack('H*')
+					end
+				rescue Encoding::CompatibilityError
+					''
 				end
 			else
 				''

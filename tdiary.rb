@@ -3,11 +3,11 @@
 == NAME
 tDiary: the "tsukkomi-able" web diary system.
 
-Copyright (C) 2001-2011, TADA Tadashi <t@tdtds.jp>
+Copyright (C) 2001-2012, TADA Tadashi <t@tdtds.jp>
 You can redistribute it and/or modify it under GPL2.
 =end
 
-TDIARY_VERSION = '3.1.1.20111030'
+TDIARY_VERSION = '3.1.3'
 
 $:.unshift File.join(File::dirname(__FILE__), '/misc/lib').untaint
 Dir["#{File::dirname(__FILE__) + '/vendor/*/lib'}"].each {|dir| $:.unshift dir.untaint }
@@ -15,13 +15,10 @@ Dir["#{File::dirname(__FILE__) + '/vendor/*/lib'}"].each {|dir| $:.unshift dir.u
 require 'cgi'
 require 'uri'
 require 'logger'
+require 'fileutils'
 require 'pstore'
 require 'json'
-begin
-	require 'erb_fast'
-rescue LoadError
-	require 'erb'
-end
+require 'erb'
 require 'tdiary/compatible'
 require 'tdiary/core_ext'
 
@@ -146,23 +143,18 @@ module TDiary
 		DIRTY_REFERER = 4
 
 		attr_reader :cookies
-		attr_reader :conf
 		attr_reader :date
 		attr_reader :diaries
+		attr_reader :cgi, :rhtml, :conf
+		attr_reader :ignore_parser_cache
 
 		def initialize( cgi, rhtml, conf )
 			@cgi, @rhtml, @conf = cgi, rhtml, conf
 			@diaries = {}
 			@cookies = []
-
-			unless @conf.io_class then
-				require 'tdiary/io/default'
-				@conf.io_class = DefaultIO
-			end
 			@io = @conf.io_class.new( self )
-
-			# load logger
-			load_logger
+			@logger = @conf.logger || load_logger
+			@ignore_parser_cache = false
 		end
 
 		def eval_rhtml( prefix = '' )
@@ -174,18 +166,6 @@ module TDiary
 				raise
 			end
 			return r
-		end
-
-		def restore_parser_cache( date, key )
-			parser_cache( date, key )
-		end
-
-		def store_parser_cache( date, key, obj )
-			parser_cache( date, key, obj )
-		end
-
-		def clear_parser_cache( date )
-			parser_cache( date )
 		end
 
 		def last_modified
@@ -206,9 +186,8 @@ module TDiary
 			load_plugins
 
 			# load and apply rhtmls
-			if cache_enable?( prefix ) then
-				r = File::open( "#{cache_path}/#{cache_file( prefix )}" ) {|f| f.read } rescue nil
-			end
+			r = @io.restore_cache( prefix )
+
 			if r.nil?
 				files = ["header.rhtml", @rhtml, "footer.rhtml"]
 				rhtml = files.collect {|file|
@@ -228,7 +207,7 @@ module TDiary
 					end
 				end
 				r = ERB::new( r ).src
-				store_cache( r, prefix ) unless @diaries.empty?
+				@io.store_cache( r, prefix ) unless @diaries.empty?
 			end
 
 			# apply plugins
@@ -249,7 +228,7 @@ module TDiary
 				'diaries' => @diaries,
 				'cgi' => @cgi,
 				'years' => @years,
-				'cache_path' => cache_path,
+				'cache_path' => @io.cache_path,
 				'date' => @date,
 				'comment' => @comment,
 				'last_modified' => last_modified,
@@ -263,88 +242,6 @@ module TDiary
 
 		def delete( date )
 			@diaries.delete( date.strftime( '%Y%m%d' ) )
-		end
-
-		def cache_path
-			(@conf.cache_path || "#{@conf.data_path}cache").untaint
-		end
-
-		def cache_file( prefix )
-			nil
-		end
-
-		def cache_enable?( prefix )
-			cache_file( prefix ) and FileTest::file?( "#{cache_path}/#{cache_file( prefix )}" )
-		end
-
-		def store_cache( cache, prefix )
-			unless FileTest::directory?( cache_path ) then
-				begin
-					Dir::mkdir( cache_path )
-				rescue Errno::EEXIST
-				end
-			end
-			if cache_file( prefix ) then
-				File::open( "#{cache_path}/#{cache_file( prefix )}", 'w' ) do |f|
-					f.flock(File::LOCK_EX)
-					f.write( cache )
-				end
-			end
-		end
-
-		def clear_cache( target = /.*/ )
-			Dir::glob( "#{cache_path}/*.r[bh]*" ).each do |c|
-				File::delete( c.untaint ) if target =~ c
-			end
-		end
-
-		def parser_cache( date, key = nil, obj = nil )
-			return nil if @ignore_parser_cache
-
-			unless FileTest::directory?( cache_path ) then
-				begin
-					Dir::mkdir( cache_path )
-				rescue Errno::EEXIST
-				end
-			end
-			file = date.strftime( "#{cache_path}/%Y%m.parser" )
-
-			unless key then
-				begin
-					File::delete( file )
-					File::delete( file + '~' )
-				rescue
-				end
-				return nil
-			end
-
-			begin
-				PStore::new( file ).transaction do |cache|
-					begin
-						unless obj then # restore
-							ver = cache.root?('version') ? cache['version'] : nil
-							if ver == TDIARY_VERSION and cache.root?(key)
-								obj = cache[key]
-							else
-								clear_cache
-							end
-							cache.abort
-						else # store
-							cache[key] = obj
-							cache['version'] = TDIARY_VERSION
-						end
-					rescue PStore::Error
-					end
-				end
-			rescue
-				begin
-					File::delete( file )
-					File::delete( file + '~' )
-				rescue
-				end
-				return nil
-			end
-			obj
 		end
 
 		def load_filters
@@ -382,10 +279,11 @@ module TDiary
 			return if @logger
 
 			log_path = (@conf.log_path || "#{@conf.data_path}log").untaint
-			Dir::mkdir( log_path ) unless FileTest::directory?( log_path )
+			FileUtils.mkdir_p(log_path) unless FileTest.directory?(log_path)
 
-			@logger = Logger::new( File.join(log_path, "debug.log"), 'daily' )
-			@logger.level = Logger.const_get( @conf.log_level || 'DEBUG' )
+			@logger = Logger.new(File.join(log_path, "debug.log"), 'daily')
+			@logger.level = Logger.const_get(@conf.log_level || 'DEBUG')
+			@logger
 		end
 	end
 
@@ -610,7 +508,7 @@ EOS
 			super
 			@plugin.instance_eval { update_proc }
 			anchor_str = @plugin.instance_eval( %Q[anchor "#{@diary.date.strftime('%Y%m%d')}"].untaint )
-			clear_cache( /(latest|#{@date.strftime( '%Y%m' )})/ )
+			@io.clear_cache( /(latest|#{@date.strftime( '%Y%m' )})/ )
 			raise ForceRedirect::new( "#{@conf.index}#{anchor_str}" )
 		end
 	end
@@ -691,7 +589,7 @@ EOS
 						com.show = @cgi.params[(idx += 1).to_s][0] == 'true' ? true : false;
 					end
 					self << @diary
-					clear_cache( /(latest|#{@date.strftime( '%Y%m' )})/ )
+					@io.clear_cache( /(latest|#{@date.strftime( '%Y%m' )})/ )
 					dirty = DIRTY_COMMENT
 				end
 				dirty
@@ -767,7 +665,7 @@ EOS
 
 			begin
 				@conf.save
-				clear_cache
+				@io.clear_cache
 			rescue
 				@error = [$!.dup, $@.dup]
 			end
@@ -850,10 +748,6 @@ EOS
 				break
 			end
 			result
-		end
-
-		def cache_enable?( prefix )
-			super and (File::mtime( "#{cache_path}/#{cache_file( prefix )}" ) > last_modified )
 		end
 	end
 
@@ -951,6 +845,7 @@ EOS
 						'path' => cookie_path,
 						'expires' => Time::now.gmtime + 90*24*60*60 # 90days
 					} )
+					@io.clear_cache( /(latest|#{@date.strftime( '%Y%m' )})/ )
 				else
 					@comment = nil
 				end
@@ -1003,11 +898,6 @@ EOS
 			rescue ArgumentError, NameError
 				raise TDiaryError, 'bad date'
 			end
-		end
-
-	protected
-		def cache_file( prefix )
-			"#{prefix}#{@rhtml.sub( /month/, @date.strftime( '%Y%m' ) ).sub( /\.rhtml$/, '.rb' )}"
 		end
 	end
 
@@ -1175,14 +1065,6 @@ EOS
 			end
 			@conf['ndays.prev'] = nil unless continue_exist
 			diaries_size
-		end
-
-		def cache_file( prefix )
-			if @cgi.params['date'][0] then
-				nil
-			else
-				"#{prefix}#{@rhtml.sub( /\.rhtml$/, '.rb' )}"
-			end
 		end
 
 		def start_date

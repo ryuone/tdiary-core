@@ -5,14 +5,15 @@
 # Copyright (C) 2005-2007 TADA Tadashi <sho@spc.gr.jp>
 # You can redistribute it and/or modify it under GPL2.
 #
-require 'net/http'
-require 'uri'
-require 'timeout'
-require 'rexml/document'
+
+autoload :Net,     'net/http'
+autoload :URI,     'uri'
+autoload :Timeout, 'timeout'
+autoload :REXML,   'rexml/document'
 
 # do not change these variables
 @amazon_subscription_id = '1CVA98NEF1G753PFESR2'
-@amazon_require_version = '2007-01-17'
+@amazon_require_version = '2011-08-01'
 
 @amazon_url_hash = {
   'ca' => 'http://www.amazon.ca/exec/obidos/ASIN',
@@ -62,7 +63,7 @@ def amazon_fetch( url, limit = 10 )
 end
 
 def amazon_call_ecs( asin, id_type, country )
-	@conf["amazon.aid.#{@amazon_default_country}"] = @conf['amazon.aid'] unless @conf['amazon.aid'].empty?
+	@conf["amazon.aid.#{@amazon_default_country}"] = @conf['amazon.aid'] unless @conf['amazon.aid'].to_s.empty?
 	aid = @conf["amazon.aid.#{country}"] || ''
 
 	url = (@conf['amazon.endpoints'] || @amazon_ecs_url_hash)[country].dup
@@ -78,7 +79,7 @@ def amazon_call_ecs( asin, id_type, country )
 	url << "&Version=#{@amazon_require_version}"
 
 	begin
-		timeout( 10 ) do
+		Timeout.timeout( 10 ) do
 			amazon_fetch( url )
 		end
 	rescue ArgumentError
@@ -232,7 +233,7 @@ def amazon_secure_html( asin, with_image, label, pos, country )
 		label = ''
 	end
 
-	@conf["amazon.aid.#{@amazon_default_country}"] = @conf['amazon.aid'] unless @conf['amazon.aid'].empty?
+	@conf["amazon.aid.#{@amazon_default_country}"] = @conf['amazon.aid'] unless @conf['amazon.aid'].to_s.empty?
 	aid = @conf["amazon.aid.#{country}"] || ''
 	amazon_url = @amazon_url_hash[country]
 	url =  "#{amazon_url}/#{u asin}"
@@ -273,7 +274,12 @@ def amazon_get( asin, with_image = true, label = nil, pos = 'amazon' )
 				amazon_to_html( item, with_image, label, pos )
 			end
 		rescue Timeout::Error
-			asin
+			@logger.error "amazon.rb: Amazon API Timeouted."
+			message = asin
+			if @mode == 'preview' then
+				message << %Q|<span class="message">(Amazon API Timeouted))</span>|
+			end
+			message
 		rescue NoMethodError
 			message = label || asin
 			if @mode == 'preview' then
