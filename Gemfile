@@ -6,6 +6,9 @@ gem 'coffee-script'
 # Use rack environment
 gem 'rack'
 gem 'sprockets'
+gem 'omniauth'
+gem 'omniauth-twitter'
+gem 'omniauth-github'
 
 # To use GFM style
 platforms :mri do
@@ -24,7 +27,11 @@ group :production do
   # To use CRuby
   platforms :mri do
     gem 'thin', :require => false
+    # gem 'unicorn', :require => false
+
     gem 'pg'
+    # gem 'mysql'
+    # gem 'sqlite3'
   end
 
   # To use JRuby
