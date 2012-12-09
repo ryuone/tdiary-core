@@ -99,6 +99,56 @@ replace
 		it { @diary.to_html.should eq @html }
 	end
 
+	describe 'url syntax with code blocks' do
+		before do
+			source = <<-'EOF'
+# subTitle
+
+```ruby
+@foo
+```
+
+http://example.com is example.com
+
+			EOF
+			@diary.append(source)
+
+			@html = <<-'EOF'
+<div class="section">
+<%=section_enter_proc( Time.at( 1041346800 ) )%>
+<h3><%= subtitle_proc( Time.at( 1041346800 ), "subTitle" ) %></h3>
+<div class="highlight"><pre><span class="vi">@foo</span>
+</pre></div>
+<p><a href="http://example.com" rel="nofollow">http://example.com</a> is example.com</p>
+<%=section_leave_proc( Time.at( 1041346800 ) )%>
+</div>
+			EOF
+		end
+		it { @diary.to_html.should eq @html }
+	end
+
+	describe 'ignored url syntax with markdown anchor' do
+		before do
+			source = <<-'EOF'
+# subTitle
+
+[example](http://example.com) is example.com
+
+			EOF
+			@diary.append(source)
+
+			@html = <<-'EOF'
+<div class="section">
+<%=section_enter_proc( Time.at( 1041346800 ) )%>
+<h3><%= subtitle_proc( Time.at( 1041346800 ), "subTitle" ) %></h3>
+<p><a href="http://example.com">example</a> is example.com</p>
+<%=section_leave_proc( Time.at( 1041346800 ) )%>
+</div>
+			EOF
+		end
+		it { @diary.to_html.should eq @html }
+	end
+
 	describe 'plugin syntax' do
 		before do
 			source = <<-'EOF'
@@ -117,6 +167,27 @@ replace
 <p><%=plugin 'val'%></p>
 
 <p><%=plugin "val", 'val'%></p>
+<%=section_leave_proc( Time.at( 1041346800 ) )%>
+</div>
+			EOF
+		end
+		it { @diary.to_html.should eq @html }
+	end
+
+	describe 'plugin syntax with url args' do
+		before do
+			source = <<-'EOF'
+# subTitle
+{{plugin 'http://www.example.com/foo.html', "https://www.example.com/bar.html"}}
+
+			EOF
+			@diary.append(source)
+
+			@html = <<-'EOF'
+<div class="section">
+<%=section_enter_proc( Time.at( 1041346800 ) )%>
+<h3><%= subtitle_proc( Time.at( 1041346800 ), "subTitle" ) %></h3>
+<p><%=plugin 'http://www.example.com/foo.html', "https://www.example.com/bar.html"%></p>
 <%=section_leave_proc( Time.at( 1041346800 ) )%>
 </div>
 			EOF
@@ -170,8 +241,27 @@ replace
 <div class="highlight"><pre> <span class="k">def</span> <span class="nf">class</span>
    <span class="vi">@foo</span> <span class="o">=</span> <span class="s1">&#39;bar&#39;</span>
  <span class="k">end</span>
-</pre>
+</pre></div><%=section_leave_proc( Time.at( 1041346800 ) )%>
 </div>
+			EOF
+		end
+		it { @diary.to_html.should eq @html }
+	end
+
+	describe 'emoji' do
+		before do
+			source = <<-'EOF'
+# subTitle
+
+:sushi: は美味しい
+			EOF
+			@diary.append(source)
+
+			@html = <<-'EOF'
+<div class="section">
+<%=section_enter_proc( Time.at( 1041346800 ) )%>
+<h3><%= subtitle_proc( Time.at( 1041346800 ), "subTitle" ) %></h3>
+<p><img src='http://www.emoji-cheat-sheet.com/graphics/emojis/sushi.png' width='20' height='20' title='sushi' alt='sushi' class='emoji' /> は美味しい</p>
 <%=section_leave_proc( Time.at( 1041346800 ) )%>
 </div>
 			EOF

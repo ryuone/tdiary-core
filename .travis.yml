@@ -1,25 +1,83 @@
 bundler_args: --without development
 
 rvm:
-#  - 1.8.7
+  - ree
   - 1.9.2
   - 1.9.3
   - ruby-head
-#  - ree
 
 before_script:
-  - ruby misc/standalone_cgi/bin/server -d
+  - export DISPLAY=:99.0
+  - sh -e /etc/init.d/xvfb start
+  - bundle exec misc/standalone_cgi/bin/server -d
 
-script: bundle exec rake spec
+script: bundle exec rake test spec
+
+env:
+  - TEST_MODE=rack
+  - TEST_MODE=rdb
+  - TEST_MODE=webrick
+  - TEST_MODE=secure
+
+gemfile:
+  - Gemfile
+  - misc/gemfiles/ruby18.gemfile
 
 notifications:
   irc: "irc.freenode.org#tdiary"
 
-branches:
-  only:
-    - master
-
-env:
-  - TEST_MODE=rack
-  - TEST_MODE=secure
-  - TEST_MODE=webrick
+matrix:
+  exclude:
+    # too bad exclude otpions.
+    - rvm: ree
+      env: TEST_MODE=rack
+      gemfile: Gemfile
+    - rvm: ree
+      env: TEST_MODE=rdb
+      gemfile: Gemfile
+    - rvm: ree
+      env: TEST_MODE=webrick
+      gemfile: Gemfile
+    - rvm: ree
+      env: TEST_MODE=secure
+      gemfile: Gemfile
+    - rvm: 1.9.2
+      env: TEST_MODE=rack
+      gemfile: misc/gemfiles/ruby18.gemfile
+    - rvm: 1.9.2
+      env: TEST_MODE=rdb
+      gemfile: misc/gemfiles/ruby18.gemfile
+    - rvm: 1.9.2
+      env: TEST_MODE=webrick
+      gemfile: misc/gemfiles/ruby18.gemfile
+    - rvm: 1.9.2
+      env: TEST_MODE=secure
+      gemfile: misc/gemfiles/ruby18.gemfile
+    - rvm: 1.9.3
+      env: TEST_MODE=rack
+      gemfile: misc/gemfiles/ruby18.gemfile
+    - rvm: 1.9.3
+      env: TEST_MODE=rdb
+      gemfile: misc/gemfiles/ruby18.gemfile
+    - rvm: 1.9.3
+      env: TEST_MODE=webrick
+      gemfile: misc/gemfiles/ruby18.gemfile
+    - rvm: 1.9.3
+      env: TEST_MODE=secure
+      gemfile: misc/gemfiles/ruby18.gemfile
+    - rvm: ruby-head
+      env: TEST_MODE=rack
+      gemfile: misc/gemfiles/ruby18.gemfile
+    - rvm: ruby-head
+      env: TEST_MODE=rdb
+      gemfile: misc/gemfiles/ruby18.gemfile
+    - rvm: ruby-head
+      env: TEST_MODE=webrick
+      gemfile: misc/gemfiles/ruby18.gemfile
+    - rvm: ruby-head
+      env: TEST_MODE=secure
+      gemfile: misc/gemfiles/ruby18.gemfile
+  allow_failures:
+    # webrick and secure mode is unstable results...
+    - env: TEST_MODE=webrick
+    - env: TEST_MODE=secure

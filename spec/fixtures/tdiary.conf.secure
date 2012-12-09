@@ -70,15 +70,6 @@ HEADER
 	<%=calendar2%>
 	<%=calendar%>
 </div>
-
-<h3>最近の日記</h3>
-<%= recent_list %>
-
-<h3>最近のツッコミ</h3>
-<%= recent_comment %>
-
-<h3>最近のTrackBack</h3>
-<%= recent_trackback %>
 </div>
 FOOTER
 
@@ -102,7 +93,7 @@ FOOTER
 @show_nyear = true
 
 @no_referer = [
-	'^' + Regexp.quote( base_url ),  # 自分の日記
+	# '^' + Regexp.quote( base_url ),  # 自分の日記
 	'^http://localhost[:/]',
 	'^http://192\.168\.',
 	'^http://172\.1[6789]',

@@ -353,7 +353,7 @@ def description_tag
 end
 
 def jquery_tag
-	%Q[<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js" type="text/javascript"></script>]
+	%Q[<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js" type="text/javascript"></script>]
 end
 
 enable_js( '00default.js' )
@@ -372,9 +372,14 @@ def js_url
 end
 
 def script_tag
+	require 'uri'
 	query = script_tag_query_string
 	html = @javascripts.sort.map {|script|
-		%Q|<script src="#{js_url}/#{script}#{query}" type="text/javascript"></script>|
+		if URI(script).scheme
+			%Q|<script src="#{script}" type="text/javascript"></script>|
+		else
+			%Q|<script src="#{js_url}/#{script}#{query}" type="text/javascript"></script>|
+		end
 	}.join( "\n\t" )
 	html << "\n" << <<-HEAD
 		<script type="text/javascript"><!--
@@ -515,7 +520,7 @@ def subtitle_link( date, index, subtitle )
 			r << "<a "
 			r << %Q[name="p#{'%02d' % index}" ] if @anchor_name
 			param = "#{date.strftime( '%Y%m%d' )}#p#{'%02d' % index}"
-			titleattr = (not subtitle or subtitle.empty?) ? '' : %Q[ title="#{remove_tag( apply_plugin subtitle ).gsub( /"/, "&quot;" )}"]
+			titleattr = (not subtitle or subtitle.empty?) ? '' : %Q[ title="#{remove_tag( apply_plugin( subtitle )).gsub( /"/, "&quot;" )}"]
 			r << %Q[href="#{h @conf.index}#{anchor param}"#{titleattr}>#{@conf.section_anchor}</a> ]
 		end
 

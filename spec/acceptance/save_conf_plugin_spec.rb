@@ -7,7 +7,7 @@ feature 'プラグイン選択設定の利用' do
 		FileUtils.rm plugin_path if File.exists? plugin_path
 
 		visit '/update.rb?conf=sp'
-		click_button 'OK'
+		page.all('div.saveconf').first.click_button 'OK'
 		page.should_not have_content '新入荷'
 
 		FileUtils.touch plugin_path
@@ -26,7 +26,7 @@ feature 'プラグイン選択設定の利用' do
 		visit '/update.rb?conf=sp'
 
 		check "sp.rspec.rb"
-		click_button 'OK'
+		page.all('div.saveconf').first.click_button 'OK'
 
 		page.should have_checked_field "sp.rspec.rb"
 
@@ -43,6 +43,21 @@ feature 'プラグイン選択設定の利用' do
 
 		click_link 'プラグイン選択'
 		page.should_not have_content 'rspec.rb'
+	end
+
+	scenario '外部の Javascript を追加するプラグインを有効にする' do
+		visit '/update.rb?conf=sp'
+
+		check "sp.category_autocomplete.rb"
+		page.all('div.saveconf').first.click_button 'OK'
+
+		visit '/update.rb'
+
+		scripts = page.all(:xpath, '//head//script').map{|s| s[:src]}.join
+		scripts.should be_include('caretposition.js')
+		scripts.should be_include('category_autocomplete.js')
+		scripts.should be_include('http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js')
+		scripts.should_not be_include('http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js?')
 	end
 end
 

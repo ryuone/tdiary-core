@@ -21,8 +21,8 @@ BODY
 			}
 			page.should have_content "こんにちは!こんにちは!"
 		}
-
-		click_link "#{Date.today.strftime('%Y年%m月%d日')}"
+		today = Date.today.strftime('%Y年%m月%d日')
+		page.find('h2', :text => today).click_link today
 		within('div.day div.comment div.commentbody') {
 			within('div.commentator'){
 				t = Time.now
@@ -54,15 +54,34 @@ BODY
 			page.should have_content "こんばんは!こんばんは!"
 		}
 
-		click_link "#{Date.today.strftime('%Y年%m月%d日')}"
+		today = Date.today.strftime('%Y年%m月%d日')
+		page.find('h2', :text => today).click_link today
 		within('div.day div.comment div.commentbody') {
 			t = Time.now
-			within('span.commenttime'){ page.should have_content "%04d年%02d月%02d日" % [t.year, t.month, t.day] }
+			page.should have_content "%04d年%02d月%02d日" % [t.year, t.month, t.day]
 			page.should have_content "alpha"
 			page.should have_content "bravo"
 			page.should have_content "こんにちは!こんにちは!"
 			page.should have_content "こんばんは!こんばんは!"
 		}
+	end
+
+	scenario 'recent_comment3.rb', :exclude_secure do
+		append_default_diary
+		visit '/'
+		click_link 'ツッコミを入れる'
+		fill_in "name", :with => "alpha"
+		fill_in "body", :with => <<-BODY
+こんにちは!こんにちは!
+BODY
+
+		click_button '投稿'
+		page.should have_content "Click here!"
+
+		visit "/"
+		within('ol.recent-comment > li') do
+			page.should have_content "alpha"
+		end
 	end
 end
 

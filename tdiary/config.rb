@@ -66,12 +66,13 @@ module TDiary
 		def base_url_auto
 			return '' unless @cgi.script_name
 			begin
+				script_dirname = @cgi.script_name.empty? ? '' : File::dirname(@cgi.script_name)
 				if @cgi.https?
 					port = (@cgi.server_port == 443) ? '' : ':' + @cgi.server_port.to_s
-					"https://#{ @cgi.server_name }#{ port }#{File::dirname(@cgi.script_name)}/"
+					"https://#{ @cgi.server_name }#{ port }#{script_dirname}/"
 				else
 					port = (@cgi.server_port == 80) ? '' : ':' + @cgi.server_port.to_s
-					"http://#{ @cgi.server_name }#{ port }#{File::dirname(@cgi.script_name)}/"
+					"http://#{ @cgi.server_name }#{ port }#{script_dirname}/"
 				end.sub(%r|/+$|, '/')
 			rescue SecurityError
 				''
@@ -141,7 +142,7 @@ module TDiary
 				retry
 			end
 
-			@data_path += '/' if /\/$/ !~ @data_path
+			@data_path += '/' if @data_path && /\/$/ !~ @data_path
 			@style = 'tDiary' unless @style
 			@index = './' unless @index
 			@update = 'update.rb' unless @update

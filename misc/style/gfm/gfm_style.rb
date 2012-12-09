@@ -1,3 +1,4 @@
+# -*- coding: utf-8; -*-
 #
 # gfm_style.rb: "GitHub Flavored Markdown" (GFM) style for tDiary 2.x format.
 #
@@ -11,11 +12,14 @@
 # You can distribute this under GPL.
 #
 
+$KCODE = 'u' if RUBY_VERSION < '1.9'
+
 begin
 	require 'rubygems'
 rescue LoadError
 ensure
 	require 'redcarpet'
+	require 'twitter-text'
 end
 
 class HTMLwithPygments < Redcarpet::Render::HTML
@@ -31,6 +35,8 @@ end
 
 module TDiary
 	class GfmSection
+		include Twitter::Autolink
+
 		attr_reader :subtitle, :author
 		attr_reader :categories, :stripped_subtitle
 		attr_reader :subtitle_to_html, :stripped_subtitle_to_html, :body_to_html
@@ -115,15 +121,36 @@ module TDiary
 
 		def to_html(string)
 			renderer = HTMLwithPygments.new(:hard_wrap => true)
-			extensions = {:fenced_code_blocks => true, :autolink => true, :tables => true}
+			extensions = {:fenced_code_blocks => true, :tables => true}
 			r = Redcarpet::Markdown.new(renderer, extensions).render(string)
+
+			# Twitter Autolink
+			r = auto_link(r)
+
+			if r =~ /(<pre>|<code>)/
+				r.gsub!(/<a class=\"tweet-url username\" href=\".*?\">(.*?)<\/a>/){ $1 }
+			end
+
+			# except url autolink in plugin block
+			if r =~ /\{\{.+?\}\}/
+				r.gsub!(/<a href=\"(.*?)\" rel=\"nofollow\">.*?<\/a>/){ $1 }
+				r.gsub!(/\{\{(.+?)\}\}/) { "<%=#{CGI.unescapeHTML($1).gsub(/&#39;/, "'").gsub(/&quot;/, '"')}%>" }
+			end
+
+			# ignore duplicate autolink
+			if r =~ /<a href="<a href="/
+				r.gsub!(/<a href="(.*?)" rel="nofollow">.*?<\/a>/){ $1 }
+			end
+
+			# emoji
+			r.gsub!(/:([a-z0-9_+-]+):/) do |emoji|
+				emoji.gsub!(":", "")
+				"<img src='http://www.emoji-cheat-sheet.com/graphics/emojis/#{emoji}.png' width='20' height='20' title='#{emoji}' alt='#{emoji}' class='emoji' />"
+			end
 
 			# diary anchor
 			r.gsub!(/<h(\d)/) { "<h#{$1.to_i + 2}" }
 			r.gsub!(/<\/h(\d)/) { "</h#{$1.to_i + 2}" }
-
-			# plugin
-			r.gsub!(/\{\{(.+?)\}\}/) { "<%=#{CGI.unescapeHTML($1)}%>" }
 
 			# my syntax
 			r.gsub!(/\((.*?)\)\[(\d{4}|\d{6}|\d{8}|\d{8}-\d+)[^\d]*?#?([pct]\d+)?\]/) {
