@@ -1,17 +1,18 @@
+services: memcache
+
 bundler_args: --without development
 
 rvm:
-  - ree
-  - 1.9.2
+  - 1.8.7
   - 1.9.3
-  - ruby-head
+  - 2.0.0
 
 before_script:
   - export DISPLAY=:99.0
   - sh -e /etc/init.d/xvfb start
-  - bundle exec misc/standalone_cgi/bin/server -d
+  - DAEMON=1 bundle exec rake server
 
-script: bundle exec rake test spec
+script: bundle exec rake spec spec:acceptance:rdb test
 
 env:
   - TEST_MODE=rack
@@ -29,30 +30,18 @@ notifications:
 matrix:
   exclude:
     # too bad exclude otpions.
-    - rvm: ree
+    - rvm: 1.8.7
       env: TEST_MODE=rack
       gemfile: Gemfile
-    - rvm: ree
+    - rvm: 1.8.7
       env: TEST_MODE=rdb
       gemfile: Gemfile
-    - rvm: ree
+    - rvm: 1.8.7
       env: TEST_MODE=webrick
       gemfile: Gemfile
-    - rvm: ree
+    - rvm: 1.8.7
       env: TEST_MODE=secure
       gemfile: Gemfile
-    - rvm: 1.9.2
-      env: TEST_MODE=rack
-      gemfile: misc/gemfiles/ruby18.gemfile
-    - rvm: 1.9.2
-      env: TEST_MODE=rdb
-      gemfile: misc/gemfiles/ruby18.gemfile
-    - rvm: 1.9.2
-      env: TEST_MODE=webrick
-      gemfile: misc/gemfiles/ruby18.gemfile
-    - rvm: 1.9.2
-      env: TEST_MODE=secure
-      gemfile: misc/gemfiles/ruby18.gemfile
     - rvm: 1.9.3
       env: TEST_MODE=rack
       gemfile: misc/gemfiles/ruby18.gemfile
@@ -65,19 +54,18 @@ matrix:
     - rvm: 1.9.3
       env: TEST_MODE=secure
       gemfile: misc/gemfiles/ruby18.gemfile
-    - rvm: ruby-head
+    - rvm: 2.0.0
       env: TEST_MODE=rack
       gemfile: misc/gemfiles/ruby18.gemfile
-    - rvm: ruby-head
+    - rvm: 2.0.0
       env: TEST_MODE=rdb
       gemfile: misc/gemfiles/ruby18.gemfile
-    - rvm: ruby-head
+    - rvm: 2.0.0
       env: TEST_MODE=webrick
       gemfile: misc/gemfiles/ruby18.gemfile
-    - rvm: ruby-head
+    - rvm: 2.0.0
       env: TEST_MODE=secure
       gemfile: misc/gemfiles/ruby18.gemfile
   allow_failures:
-    # webrick and secure mode is unstable results...
+    # webrick mode is unstable results...
     - env: TEST_MODE=webrick
-    - env: TEST_MODE=secure

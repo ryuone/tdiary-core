@@ -2,7 +2,6 @@ require 'spec_helper'
 
 Dir["#{File.dirname(__FILE__)}/acceptance/support/**/*.rb"].each {|f| require f}
 
-require 'tdiary/application'
 Capybara.app = Rack::Builder.new do
 	map '/' do
 		run TDiary::Application.new(:index)
@@ -60,6 +59,7 @@ RSpec.configure do |config|
 					db.drop_table(table) if db.table_exists? table
 				end
 			end
+			Dalli::Client.new(nil, {:namespace => 'test'}).flush
 		end
 	else
 		config.before(:each) do
@@ -84,6 +84,7 @@ RSpec.configure do |config|
 				  when 'rdb'
 					  [:exclude_rdb, :exclude_rack, :exclude_no_secure]
 				  else
+					  # TEST_MODE = rack
 					  [:exclude_rack, :exclude_no_secure]
 				  end
 	excludes.each do |exclude|

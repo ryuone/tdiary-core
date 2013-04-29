@@ -33,7 +33,8 @@ module TDiary
 							'Content-Type' => 'text/html',
 							'charset' => conf.encoding,
 							'Content-Length' => body.bytesize.to_s,
-							'Vary' => 'User-Agent'
+							'Vary' => 'User-Agent',
+							'X-Frame-Options' => 'SAMEORIGIN'
 						}
 					end
 					body = ( request.head? ? '' : body )
@@ -57,15 +58,16 @@ module TDiary
 				end
 			end
 
-			private
+		private
+
 			def create_tdiary
 				begin
 					if params['append']
-						tdiary = TDiary::TDiaryAppend::new( cgi, 'show.rhtml', conf )
+						tdiary = TDiary::TDiaryAppend::new( cgi, nil, conf )
 					elsif params['edit']
 						tdiary = TDiary::TDiaryEdit::new( cgi, 'update.rhtml', conf )
 					elsif params['replace']
-						tdiary = TDiary::TDiaryReplace::new( cgi, 'show.rhtml', conf )
+						tdiary = TDiary::TDiaryReplace::new( cgi, nil, conf )
 					elsif params['appendpreview'] or params['replacepreview']
 						tdiary = TDiary::TDiaryPreview::new( cgi, 'preview.rhtml', conf )
 					elsif params['plugin']

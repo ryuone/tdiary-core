@@ -88,7 +88,9 @@ class PluginFake
 
 	class Config
 
-		attr_accessor :index, :html_title, :cgi
+		attr_accessor :index, :update, :author_name, :author_mail, :index_page,
+			:html_title, :theme, :css, :date_format, :referer_table, :options, :cgi,
+			:plugin_path, :lang, :style, :secure
 
 		def initialize
 			@cgi = CGIFake.new
@@ -133,10 +135,10 @@ class PluginFake
 		end
 	end
 
-	def iphone?
-		@conf.cgi.iphone?
+	def smartphone?
+		@conf.cgi.smartphone?
 	end
-	alias ipod? iphone?
+  alias iphone? smartphone?
 end
 
 class CGIFake
@@ -156,7 +158,7 @@ class CGIFake
 		]x
 	end
 
-	def iphone?
+	def smartphone?
 		self.user_agent =~ /iP(?:hone|od)/
 	end
 end

@@ -86,7 +86,7 @@ username と application の値は別途読み替えてください。続いて�
 % git checkout -b deploy
 ```
 
-作業ブランチで Heroku で動かすために必要な設定ファイルをコピーします。
+作業ブランチで Sqale で動かすために必要な設定ファイルをコピーします。
 
 ```
 % cp misc/paas/sqale/* .
@@ -120,7 +120,18 @@ git commit -m "deploy"
 git push sqale deploy:master
 ```
 
-これで http://mydiary.herokuapp.com にアクセスして日記を書くことができます。
+これで http://application-username.sqale.jp にアクセスして日記を書くことができます。
+
+### サーバーの選択
+
+Sqale用の`Procfile`（`misc/paas/sqale/Procfile`）ではThinというサーバーを設定していますが、このファイルを書き換えることで他のサーバーでtDiaryを動かすこともできます。
+指定できるサーバーと設定方法の詳細は、Sqaleの[マニュアル](https://sqale.jp/support/manual/change-web-server)を参照してください。
+
+また、SqaleデフォルトのUnicornで動かしたい場合は、`Procfile`を削除してください。
+
+```
+git rm Procfile
+```
 
 独自のテーマファイルを使う方法
 ----
@@ -184,8 +195,8 @@ require 'tdiary/io/cache/memcached'
 
 ```
 git add .
-git commit -m "enable memcach"
+git commit -m "enable memcache"
 git push heroku deploy:master
 ```
 
-git push コマンドが完了すると memacached をキャッシュの保存先とした tDiary が利用可能となります。
+git push コマンドが完了すると memcached をキャッシュの保存先とした tDiary が利用可能となります。

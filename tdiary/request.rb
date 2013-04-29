@@ -73,7 +73,7 @@ module TDiary
 			end
 
 			def xhr?
-				raise NameError, 'not implemented : xhr?'
+				@env["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest"
 			end
 
 			def accept_encoding
@@ -196,6 +196,10 @@ module TDiary
 
 			def user_agent
 				@cgi.user_agent
+			end
+
+			def base_url
+				@cgi.base_url
 			end
 
 			def values_at( *keys )

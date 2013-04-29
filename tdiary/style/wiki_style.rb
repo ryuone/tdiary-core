@@ -14,9 +14,7 @@ require 'hikidoc'
 
 module TDiary
 	class WikiSection
-		attr_reader :subtitle, :author
-		attr_reader :categories, :stripped_subtitle
-		attr_reader :subtitle_to_html, :stripped_subtitle_to_html, :body_to_html
+		include SectionBase
 
 		def initialize( fragment, author = nil )
 			@author = author
@@ -42,31 +40,12 @@ module TDiary
 		end
 
 		def subtitle=(subtitle)
-			cat_str = ""
-			@categories.each {|cat|
-				cat_str << "[#{cat}]"
-			}
-			cat_str << " " unless cat_str.empty?
-			@subtitle = subtitle ? (cat_str + subtitle) : nil
+			@subtitle = subtitle ? (categories_to_string + subtitle) : nil
 			@stripped_subtitle = strip_subtitle
 		end
 
-		def body
-			@body.dup
-		end
-
-		def body=(str)
-			@body = str
-		end
-
 		def categories=(categories)
-			@categories = categories
-			cat_str = ""
-			categories.each {|cat|
-				cat_str << "[#{cat}]"
-			}
-			cat_str << " " unless cat_str.empty?
-			@subtitle = @subtitle ? (cat_str + @stripped_subtitle) : nil
+			@subtitle = @subtitle ? (categories_to_string + @stripped_subtitle) : nil
 			@stripped_subtitle = strip_subtitle
 		end
 
@@ -76,38 +55,21 @@ module TDiary
 			r << @body
 		end
 
-		def html4( date, idx, opt )
-			r = %Q[<div class="section">\n]
-			r << %Q[<%=section_enter_proc( Time::at( #{date.to_i} ) )%>\n]
-			r << do_html4( date, idx, opt )
-			r << %Q[<%=section_leave_proc( Time::at( #{date.to_i} ) )%>\n]
-			r << "</div>\n"
-		end
-
 		def do_html4( date, idx, opt )
 			subtitle = false
 			r = @html.lstrip
 			r.sub!( %r!<h3>(.+?)</h3>!m ) do
 				subtitle = true
-				"<h3><%= subtitle_proc( Time::at( #{date.to_i} ), #{$1.dump.gsub( /%/, '\\\\045' )} ) %></h3>"
+				"<h3><%= subtitle_proc( Time.at( #{date.to_i} ), #{$1.dump.gsub( /%/, '\\\\045' )} ) %></h3>"
 			end
 			r.sub!( %r!^<p>(.+?)</p>$!m ) do
-				"<p><%= subtitle_proc( Time::at( #{date.to_i} ), #{$1.dump.gsub( /%/, '\\\\045' )} ) %></p>"
+				"<p><%= subtitle_proc( Time.at( #{date.to_i} ), #{$1.dump.gsub( /%/, '\\\\045' )} ) %></p>"
 			end unless subtitle
 			r.gsub( /<(\/)?tdiary-section>/, '<\\1p>' )
 		end
 
-		def chtml( date, idx, opt )
-			r = %Q[<%=section_enter_proc( Time::at( #{date.to_i} ) )%>\n]
-			r << do_html4( date, idx, opt )
-			r << %Q[<%=section_leave_proc( Time::at( #{date.to_i} ) )%>\n]
-		end
-
-		def to_s
-			to_src
-		end
-
 	private
+
 		def valid_plugin_syntax?(code)
 			lambda {
 				$SAFE = 4
@@ -189,7 +151,7 @@ module TDiary
 		include DiaryBase
 		include CategorizableDiary
 
-		def initialize( date, title, body, modified = Time::now )
+		def initialize( date, title, body, modified = Time.now )
 			init_diary
 			replace( date, title, body )
 			@last_modified = modified
@@ -197,13 +159,6 @@ module TDiary
 
 		def style
 			'Wiki'
-		end
-
-		def replace( date, title, body )
-			set_date( date )
-			set_title( title )
-			@sections = []
-			append( body )
 		end
 
 		def append( body, author = nil )
@@ -239,64 +194,13 @@ module TDiary
 				end
 			end
 			@sections << WikiSection::new( section, author ) if section
-			@last_modified = Time::now
+			@last_modified = Time.now
 			self
-		end
-
-		def each_section
-			@sections.each do |section|
-				yield section
-			end
 		end
 
 		def add_section(subtitle, body)
 			@sections << WikiSection::new("! #{subtitle}\n#{body}")
 			@sections.size
-		end
-
-		def delete_section(index)
-		  @sections.delete_at(index - 1)
-		end
-
-		def to_src
-			r = ''
-			each_section do |section|
-				r << section.to_src
-			end
-			r
-		end
-
-		def to_html( opt = {}, mode = :HTML )
-			case mode
-			when :CHTML
-				to_chtml( opt )
-			else
-				to_html4( opt )
-			end
-		end
-
-		def to_html4( opt )
-			r = ''
-			idx = 1
-			each_section do |section|
-				r << section.html4( date, idx, opt )
-				idx += 1
-			end
-			r
-		end
-
-		def to_chtml( opt )
-			r = ''
-			idx = 1
-			each_section do |section|
-				r << section.chtml( date, idx, opt )
-				idx += 1
-			end
-			r
-		end
-
-		def to_s
-			"date=#{date.strftime('%Y%m%d')}, title=#{title}, body=[#{@sections.join('][')}]"
 		end
 	end
 end

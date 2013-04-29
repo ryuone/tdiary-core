@@ -8,6 +8,8 @@ require 'erb'
 module TDiary
 	class Plugin
 		include ERB::Util
+		include ViewHelper
+
 		attr_reader :cookies
 		attr_writer :comment, :date, :diaries, :last_modified
 
@@ -28,6 +30,7 @@ module TDiary
 			@conf_keys = []
 			@conf_procs = {}
 			@conf_genre_label = {}
+			@content_procs = {}
 			@cookies = []
 			@javascripts = []
 			@javascript_setting = []
@@ -308,6 +311,17 @@ module TDiary
 			@javascript_setting << [var, val]
 		end
 
+		def add_content_proc( key, block = Proc::new )
+			@content_procs[key] = block
+		end
+
+		def content_proc( key, date )
+			unless @content_procs.key?( key )
+				raise PluginError::new( "Plugin error: #{key} is not found." )
+			end
+			@content_procs[key].call( date )
+		end
+
 		def remove_tag( str )
 			str.gsub( /<[^"'<>]*(?:"[^"]*"[^"'<>]*|'[^']*'[^"'<>]*)*(?:>|(?=<)|$)/, '' )
 		end
@@ -339,10 +353,6 @@ module TDiary
 				end
 			end
 			str ? str : ref
-		end
-
-		def bot?
-			@conf.bot?
 		end
 
 		def help( name )

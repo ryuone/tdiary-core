@@ -1,12 +1,13 @@
 $:.unshift( File::dirname( __FILE__ ).untaint )
-require 'tdiary/application'
+require 'tdiary/environment'
+require 'tdiary'
 require 'tdiary/rack/html_anchor'
 require 'tdiary/rack/valid_request_path'
 require 'tdiary/rack/auth/basic'
 require 'omniauth'
 require 'tdiary/rack/auth/omniauth'
 
-use Rack::Reloader
+use Rack::Reloader unless ENV['RACK_ENV'] == 'production'
 
 base_dir = ''
 
@@ -46,10 +47,9 @@ end
 
 map "#{base_dir}/" do
 	use TDiary::Rack::HtmlAnchor
-	use TDiary::Rack::ValidRequestPath
 	run Rack::Cascade.new([
 		Rack::File.new("./public/"),
-		TDiary::Application.new(:index)
+		TDiary::Rack::ValidRequestPath.new(TDiary::Application.new(:index))
 	])
 end
 

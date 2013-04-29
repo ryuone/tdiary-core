@@ -1,4 +1,4 @@
-<%# diary.rhtml %><%% @anchor_name = <%=opt['anchor'] || false%> %>
+<%% @anchor_name = <%=opt['anchor'] || false%> %>
 <div class="day autopagerize_page_element">
 <h2><%%= title_proc( Time::at( <%=@date.to_i%> ), <%= title.dump.gsub( /%/, '\\\\045' ) %> ) %></h2>
 
@@ -24,7 +24,7 @@ if opt['show_comment'] and count_comments > 0 then
 				<p><% if opt['bot'] then %>
 					<%=h comment.body.gsub( /\n/ , "<br>" ).gsub( /<br><br>\Z/, '' ) %>
 				<% else %>
-					<%= comment.body.make_link.gsub( /\n/ , "<br>" ).gsub( /<br><br>\Z/, '' ) %>
+					<%= comment.body.make_link.emojify.gsub( /\n/ , "<br>" ).gsub( /<br><br>\Z/, '' ) %>
 				<% end %></p><%
 			end
 		end %>
@@ -38,7 +38,7 @@ if opt['show_comment'] and count_comments > 0 then
 		each_comment_tail( opt['comment_limit'] ) do |comment,idx|
 			if comment.visible? %>
 				<p><a href="<%=h opt['index'] %><%%=anchor "<%= @date.strftime( '%Y%m%d' ) %>#c<%= '%02d' % idx %>" %>"><%= opt['comment_anchor'] %></a>
-				<span class="commentator"><%=h comment.name %></span>&nbsp;[<%=h comment.shorten( opt['comment_length'] ) %>]</p><%
+				<span class="commentator"><%=h comment.name %></span>&nbsp;[<%=h(comment.shorten( opt['comment_length'] )).emojify %>]</p><%
 			end
 		end %>
 		</div><%
@@ -81,4 +81,3 @@ if opt['show_referer'] then
 	end
 end %>
 </div>
-

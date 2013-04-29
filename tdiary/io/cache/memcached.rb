@@ -2,18 +2,6 @@ require 'dalli'
 
 module TDiary
 	module CacheIO
-		def restore_data(key)
-			memcache.get(key)
-		end
-
-		def store_data(data, key)
-			memcache.set(key, data)
-		end
-
-		def delete_data(key)
-			memcache.delete(key)
-		end
-
 		def restore_cache(prefix)
 			if key = cache_key(prefix)
 				restore_data(key)
@@ -28,7 +16,7 @@ module TDiary
 
 		def clear_cache(target = :all)
 			if target == :all
-				memcache.flush
+				delete_data(:all)
 			else
 				ym = target.to_s.scan(/\d{4}\d{2}/)[0]
 				['latest.rb', 'i.latest.rb', "#{ym}.rb", "i.#{ym}.rb"].each do |key|
@@ -39,16 +27,32 @@ module TDiary
 
 		private
 
+		def restore_data(key)
+			memcache.get(key)
+		end
+
+		def store_data(data, key)
+			memcache.set(key, data)
+		end
+
+		def delete_data(key)
+			if key == :all
+				memcache.flush
+			else
+				memcache.delete(key)
+			end
+		end
+
 		def restore_parser_cache(date, key = nil)
-			memcache.get(date.strftime("%Y%m.parser"))
+			restore_data(date.strftime("%Y%m.parser"))
 		end
 
 		def store_parser_cache(date, obj, key = nil)
-			memcache.set(date.strftime("%Y%m.parser"), obj)
+			store_data(obj, date.strftime("%Y%m.parser"))
 		end
 
-		def clear_parser_cache(date)
-			memcache.flush
+		def clear_parser_cache(*args)
+			delete_data(:all)
 		end
 
 		def cache_key(prefix)
@@ -66,7 +70,11 @@ module TDiary
 		end
 
 		def memcache
-			@_client ||= Dalli::Client.new
+			options = {}
+			if @tdiary.conf.user_name
+				options.merge!({:namespace => @tdiary.conf.user_name})
+			end
+			@_client ||= Dalli::Client.new(nil, options)
 		end
 	end
 end

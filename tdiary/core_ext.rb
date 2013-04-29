@@ -32,6 +32,14 @@ class String
 			gsub( /\001/, ' ' ).
 			gsub( /\t/, '&nbsp;' * 8 )
 	end
+
+	def emojify
+		self.gsub(/:([a-zA-Z0-9_+-]+):/) do |emoji|
+			emoji = ":plus1:" if emoji == ":+1:"
+			emoji.gsub!(":", "").downcase!
+			"<img src='http://www.emoji-cheat-sheet.com/graphics/emojis/#{emoji}.png' width='20' height='20' title='#{emoji}' alt='#{emoji}' class='emoji' />"
+		end
+	end
 end
 
 =begin
@@ -67,6 +75,22 @@ class CGI
 
 	def redirect_url
 		env_table['REDIRECT_URL']
+	end
+
+	def base_url
+		return '' unless script_name
+		begin
+			script_dirname = script_name.empty? ? '' : File::dirname(script_name)
+			if https?
+				port = (server_port == 443) ? '' : ':' + server_port.to_s
+				"https://#{server_name}#{port}#{script_dirname}/"
+			else
+				port = (server_port == 80) ? '' : ':' + server_port.to_s
+				"http://#{server_name}#{port}#{script_dirname}/"
+			end.sub(%r|/+$|, '/')
+		rescue SecurityError
+			''
+		end
 	end
 end
 

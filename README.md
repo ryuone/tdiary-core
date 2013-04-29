@@ -1,5 +1,7 @@
 # tDiary
 
+[![Build Status](https://secure.travis-ci.org/tdiary/tdiary-core.png)](https://travis-ci.org/tdiary/tdiary-core) [![Coverage Status](https://coveralls.io/repos/tdiary/tdiary-core/badge.png?branch=master)](https://coveralls.io/r/tdiary/tdiary-core) [![Dependency Status](https://gemnasium.com/tdiary/tdiary-core.png)](https://gemnasium.com/tdiary/tdiary-core) [![Code Climate](https://codeclimate.com/github/tdiary/tdiary-core.png)](https://codeclimate.com/github/tdiary/tdiary-core)
+
 ## tDiary, The TSUKKOMI-able Weblog.
 
 At first, see doc/README-en.rd

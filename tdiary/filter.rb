@@ -5,12 +5,14 @@
 module TDiary
 	module Filter
 		class Filter
+			include ViewHelper
+
 			DEBUG_NONE = 0
 			DEBUG_SPAM = 1
 			DEBUG_FULL = 2
 
-			def initialize( cgi, conf, logger )
-				@cgi, @conf, @logger = cgi, conf, logger
+			def initialize( cgi, conf )
+				@cgi, @conf = cgi, conf
 
 				if @conf.options.include?('filter.debug_mode')
 					@debug_mode = @conf.options['filter.debug_mode']
@@ -31,7 +33,7 @@ module TDiary
 				return if @debug_mode == DEBUG_NONE
 				return if @debug_mode == DEBUG_SPAM and level == DEBUG_FULL
 
-				@logger.info("#{@cgi.remote_addr}->#{(@cgi.params['date'][0] || 'no date').dump}: #{msg}")
+				TDiary.logger.info("#{@cgi.remote_addr}->#{(@cgi.params['date'][0] || 'no date').dump}: #{msg}")
 			end
 		end
 	end
